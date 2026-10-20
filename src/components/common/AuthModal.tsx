@@ -180,7 +180,7 @@ export const AuthModal: React.FC = () => {
           });
         }
 
-        setSuccessMsg(`Maligayang pagdating sa Hanap Palawan, ${profile.displayName}!`);
+        setSuccessMsg(`Mabuhay! Maligayang pagdating sa Hanap Palawan, ${profile.displayName}! Isang karangalan na makasama ka sa ating komunidad.`);
         setTimeout(() => {
           closeAuthModal();
         }, 1200);

@@ -115,7 +115,7 @@ export const JobAlertSignup: React.FC = () => {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-                      Matagumpay na Naka-subscribe!
+                      Mabuhay! Maligayang pagdating sa Job Alerts Community
                     </h4>
                     <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100/90 dark:bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
                       Aktibo

@@ -139,15 +139,15 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  JOBS: 'hanap_palawan_jobs_v4',
-  APPLICANTS: 'hanap_palawan_applicants_v4',
-  INTERVIEWS: 'hanap_palawan_interviews_v4',
-  PROFILE: 'hanap_palawan_profile_v4',
-  SAVED_JOBS: 'hanap_palawan_saved_jobs_v4',
-  ROLE: 'hanap_palawan_role_v4',
-  BOOKMARKED_NEWS: 'hanap_palawan_bookmarked_news_v4',
-  THEME: 'hanap_palawan_theme_v4',
-  USER_PROFILE: 'hanap_palawan_user_profile_v4'
+  JOBS: 'hanap_palawan_jobs_v5',
+  APPLICANTS: 'hanap_palawan_applicants_v5',
+  INTERVIEWS: 'hanap_palawan_interviews_v5',
+  PROFILE: 'hanap_palawan_profile_v5',
+  SAVED_JOBS: 'hanap_palawan_saved_jobs_v5',
+  ROLE: 'hanap_palawan_role_v5',
+  BOOKMARKED_NEWS: 'hanap_palawan_bookmarked_news_v5',
+  THEME: 'hanap_palawan_theme_v5',
+  USER_PROFILE: 'hanap_palawan_user_profile_v5'
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -264,14 +264,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [savedJobIds, setSavedJobIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
-      return saved ? JSON.parse(saved) : ['job-101', 'job-107'];
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return ['job-101', 'job-107'];
+      return [];
     }
   });
 
   // Modal / Active states
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(jobs[0]?.id || 'job-101');
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(jobs[0]?.id || null);
   const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
   const [activeInterviewRoom, setActiveInterviewRoom] = useState<Interview | null>(null);
   const [schedulingForApplicant, setSchedulingForApplicant] = useState<Applicant | null>(null);

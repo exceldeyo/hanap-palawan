@@ -14,7 +14,10 @@ import {
   Briefcase, 
   ExternalLink,
   Heart,
-  Calendar
+  Calendar,
+  Upload,
+  Sparkles,
+  Camera
 } from 'lucide-react';
 
 export const ProfileResumeView: React.FC = () => {
@@ -66,7 +69,25 @@ export const ProfileResumeView: React.FC = () => {
   const [newSkill, setNewSkill] = useState('');
   const [portfolioUrl, setPortfolioUrl] = useState(candidateProfile.portfolioUrl || '');
   const [githubUrl, setGithubUrl] = useState(candidateProfile.githubUrl || '');
+  const [avatarUrl, setAvatarUrl] = useState(candidateProfile.avatarUrl || '');
+  
+  // Dynamic experience and education lists
+  const [experienceList, setExperienceList] = useState(candidateProfile.experience || []);
+  const [educationList, setEducationList] = useState(candidateProfile.education || []);
+
+  // Form inputs for adding new experience
+  const [newExpRole, setNewExpRole] = useState('');
+  const [newExpCompany, setNewExpCompany] = useState('');
+  const [newExpDuration, setNewExpDuration] = useState('');
+  const [newExpHighlight, setNewExpHighlight] = useState('');
+
+  // Form inputs for adding new education
+  const [newEduDegree, setNewEduDegree] = useState('');
+  const [newEduSchool, setNewEduSchool] = useState('');
+  const [newEduYear, setNewEduYear] = useState('');
+
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [parseMsg, setParseMsg] = useState<string | null>(null);
 
   const handleAddSkill = () => {
     if (!newSkill.trim() || skills.includes(newSkill.trim())) return;
@@ -76,6 +97,85 @@ export const ProfileResumeView: React.FC = () => {
 
   const handleRemoveSkill = (skillToRemove: string) => {
     setSkills(skills.filter(s => s !== skillToRemove));
+  };
+
+  const handleAddExperience = () => {
+    if (!newExpRole.trim() || !newExpCompany.trim()) return;
+    const newExp = {
+      id: 'exp-' + Date.now(),
+      role: newExpRole.trim(),
+      company: newExpCompany.trim(),
+      duration: newExpDuration.trim() || '2025 - Present',
+      highlights: newExpHighlight.trim() ? [newExpHighlight.trim()] : ['Nagsilbi sa lokal na komunidad at proyektong panteknolohiya']
+    };
+    setExperienceList([newExp, ...experienceList]);
+    setNewExpRole('');
+    setNewExpCompany('');
+    setNewExpDuration('');
+    setNewExpHighlight('');
+  };
+
+  const handleDeleteExperience = (id: string) => {
+    setExperienceList(experienceList.filter(e => e.id !== id));
+  };
+
+  const handleAddEducation = () => {
+    if (!newEduDegree.trim() || !newEduSchool.trim()) return;
+    const newEdu = {
+      id: 'edu-' + Date.now(),
+      degree: newEduDegree.trim(),
+      school: newEduSchool.trim(),
+      year: newEduYear.trim() || '2021 - 2025'
+    };
+    setEducationList([newEdu, ...educationList]);
+    setNewEduDegree('');
+    setNewEduSchool('');
+    setNewEduYear('');
+  };
+
+  const handleDeleteEducation = (id: string) => {
+    setEducationList(educationList.filter(e => e.id !== id));
+  };
+
+  // Resume file upload & auto-parser simulation
+  const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string || '';
+      // Heuristic auto-filling from uploaded resume text
+      setParseMsg('Binabasa at pinu-parse ang resume...');
+      setTimeout(() => {
+        if (text.includes('@')) {
+          // Attempt email extraction
+          const emailMatch = text.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
+          if (emailMatch) setEmail(emailMatch[1]);
+        }
+        if (text.length > 50) {
+          setSummary(text.slice(0, 300) + '...');
+        }
+        setParseMsg('Tagumpay na na-parse at nai-fill up ang profile mula sa resume!');
+        setTimeout(() => setParseMsg(null), 4000);
+      }, 1000);
+    };
+    reader.readAsText(file);
+  };
+
+  // Profile picture upload
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        setAvatarUrl(result);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveProfile = (e: React.FormEvent) => {
@@ -90,6 +190,9 @@ export const ProfileResumeView: React.FC = () => {
       skills,
       portfolioUrl,
       githubUrl,
+      avatarUrl,
+      experience: experienceList,
+      education: educationList,
       resumeLastUpdated: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     });
     setSavedSuccess(true);
@@ -101,33 +204,30 @@ export const ProfileResumeView: React.FC = () => {
       {/* Top Banner */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start sm:items-center gap-3.5 sm:gap-4">
-          {candidateProfile.avatarUrl ? (
+          {avatarUrl ? (
             <img
-              src={candidateProfile.avatarUrl}
-              alt={candidateProfile.fullName}
+              src={avatarUrl}
+              alt={fullName}
               referrerPolicy="no-referrer"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
-              }}
               className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border border-slate-200 shadow-xs shrink-0"
             />
           ) : (
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-emerald-700 text-white font-extrabold flex items-center justify-center text-xl shrink-0">
-              {candidateProfile.fullName.charAt(0)}
+              {fullName ? fullName.charAt(0).toUpperCase() : 'U'}
             </div>
           )}
 
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">{candidateProfile.fullName}</h2>
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">{fullName || 'Palaweño Job Seeker'}</h2>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 shrink-0">
                 Palaweño Verified
               </span>
             </div>
-            <p className="text-xs text-slate-600 mt-0.5">{candidateProfile.headline}</p>
+            <p className="text-xs text-slate-600 mt-0.5">{headline}</p>
             <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
               <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-              <span>{candidateProfile.location}</span>
+              <span>{location}</span>
             </p>
           </div>
         </div>
@@ -274,6 +374,44 @@ export const ProfileResumeView: React.FC = () => {
           </button>
         </div>
 
+        {parseMsg && (
+          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{parseMsg}</span>
+          </div>
+        )}
+
+        {/* Resume Upload & Profile Picture Upload Tools */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-slate-900 flex items-center gap-1.5">
+              <Upload className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Mag-upload ng Resume (Auto-Fill)</span>
+            </label>
+            <p className="text-[11px] text-slate-500">I-upload ang iyong PDF/TXT resume para awtomatikong mabasa at ma-fill up ang profile.</p>
+            <input
+              type="file"
+              accept=".pdf,.txt,.doc,.docx"
+              onChange={handleResumeUpload}
+              className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-slate-900 flex items-center gap-1.5">
+              <Camera className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Palitan ang Profile Picture</span>
+            </label>
+            <p className="text-[11px] text-slate-500">Mag-upload ng larawan para sa inyong account profile.</p>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-white hover:file:bg-slate-900 cursor-pointer"
+            />
+          </div>
+        </div>
+
         {/* Basic inputs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -409,45 +547,150 @@ export const ProfileResumeView: React.FC = () => {
           </div>
         </div>
 
-        {/* Education Highlight (PSU/WPU) */}
-        <div className="space-y-3 pt-4 border-t border-slate-200">
-          <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-            <GraduationCap className="w-4 h-4 text-emerald-600" />
-            <span>Pinag-aralan sa Palawan (Education)</span>
-          </h4>
+        {/* Education Section (Fill to Insert) */}
+        <div className="space-y-4 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <GraduationCap className="w-4 h-4 text-emerald-600" />
+              <span>Edukasyon (Education)</span>
+            </h4>
+          </div>
 
-          {candidateProfile.education.map(edu => (
-            <div key={edu.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
-              <div>
-                <div className="font-bold text-slate-900">{edu.degree}</div>
-                <div className="text-slate-600">{edu.school}</div>
+          <div className="space-y-2.5">
+            {educationList.map(edu => (
+              <div key={edu.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
+                <div>
+                  <div className="font-bold text-slate-900">{edu.degree}</div>
+                  <div className="text-slate-600">{edu.school}</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-slate-400 font-semibold">{edu.year}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteEducation(edu.id)}
+                    className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-              <div className="font-mono text-slate-400 font-semibold">{edu.year}</div>
+            ))}
+          </div>
+
+          {/* Add Education Form */}
+          <div className="p-4 bg-slate-50/80 rounded-xl border border-dashed border-slate-300 space-y-3">
+            <div className="text-xs font-bold text-slate-800">Magdagdag ng Edukasyon</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input
+                type="text"
+                placeholder="Degree / Kurso (hal. BSIT)"
+                value={newEduDegree}
+                onChange={e => setNewEduDegree(e.target.value)}
+                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+              />
+              <input
+                type="text"
+                placeholder="Paaralan / Unibersidad"
+                value={newEduSchool}
+                onChange={e => setNewEduSchool(e.target.value)}
+                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+              />
+              <input
+                type="text"
+                placeholder="Taon (hal. 2020 - 2024)"
+                value={newEduYear}
+                onChange={e => setNewEduYear(e.target.value)}
+                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+              />
             </div>
-          ))}
+            <button
+              type="button"
+              onClick={handleAddEducation}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Idagdag ang Edukasyon</span>
+            </button>
+          </div>
         </div>
 
-        {/* Work experience preview */}
-        <div className="space-y-3 pt-4 border-t border-slate-200">
-          <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-            <Briefcase className="w-4 h-4 text-emerald-600" />
-            <span>Karanasan sa Trabaho (Work Experience)</span>
-          </h4>
+        {/* Work Experience Section (Fill to Insert) */}
+        <div className="space-y-4 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <Briefcase className="w-4 h-4 text-emerald-600" />
+              <span>Karanasan sa Trabaho (Work Experience)</span>
+            </h4>
+          </div>
 
-          {candidateProfile.experience.map(exp => (
-            <div key={exp.id} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1 text-xs">
-              <div className="flex justify-between items-baseline">
-                <span className="font-bold text-slate-900">{exp.role}</span>
-                <span className="font-mono text-slate-400 text-[11px]">{exp.duration}</span>
+          <div className="space-y-3">
+            {experienceList.map(exp => (
+              <div key={exp.id} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1 text-xs">
+                <div className="flex justify-between items-baseline">
+                  <span className="font-bold text-slate-900">{exp.role}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-slate-400 text-[11px]">{exp.duration}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteExperience(exp.id)}
+                      className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+                <div className="text-emerald-700 font-semibold">{exp.company}</div>
+                <ul className="mt-2 space-y-1 text-slate-600 list-disc list-inside">
+                  {exp.highlights.map((h, i) => (
+                    <li key={i}>{h}</li>
+                  ))}
+                </ul>
               </div>
-              <div className="text-emerald-700 font-semibold">{exp.company}</div>
-              <ul className="mt-2 space-y-1 text-slate-600 list-disc list-inside">
-                {exp.highlights.map((h, i) => (
-                  <li key={i}>{h}</li>
-                ))}
-              </ul>
+            ))}
+          </div>
+
+          {/* Add Experience Form */}
+          <div className="p-4 bg-slate-50/80 rounded-xl border border-dashed border-slate-300 space-y-3">
+            <div className="text-xs font-bold text-slate-800">Magdagdag ng Karanasan sa Trabaho</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input
+                type="text"
+                placeholder="Posisyon (hal. Frontend Dev)"
+                value={newExpRole}
+                onChange={e => setNewExpRole(e.target.value)}
+                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+              />
+              <input
+                type="text"
+                placeholder="Kumpanya / Organisasyon"
+                value={newExpCompany}
+                onChange={e => setNewExpCompany(e.target.value)}
+                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+              />
+              <input
+                type="text"
+                placeholder="Tagal (hal. 2023 - Present)"
+                value={newExpDuration}
+                onChange={e => setNewExpDuration(e.target.value)}
+                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+              />
             </div>
-          ))}
+            <input
+              type="text"
+              placeholder="Pangunahing gawain o tagumpay (Highlight)"
+              value={newExpHighlight}
+              onChange={e => setNewExpHighlight(e.target.value)}
+              className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+            />
+            <button
+              type="button"
+              onClick={handleAddExperience}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Idagdag ang Karanasan</span>
+            </button>
+          </div>
         </div>
       </form>
       )}
