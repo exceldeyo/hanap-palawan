@@ -1,0 +1,6 @@
+{
+  "name": "Hanap Palawan - Trabaho Para sa Palaweño",
+  "description": "The dedicated job search and direct hiring platform for Palaweños across Puerto Princesa, El Nido, Coron, San Vicente, and remote work.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

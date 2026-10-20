@@ -1,0 +1,87 @@
+{
+  "entities": {
+    "Job": {
+      "title": "Job",
+      "description": "A job opening listing in Palawan",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "company": { "type": "string" },
+        "location": { "type": "string" },
+        "workplaceType": { "type": "string" },
+        "type": { "type": "string" },
+        "experienceLevel": { "type": "string" },
+        "salaryMin": { "type": "number" },
+        "salaryMax": { "type": "number" },
+        "currency": { "type": "string" },
+        "salaryPeriod": { "type": "string" },
+        "department": { "type": "string" },
+        "description": { "type": "string" },
+        "postedDate": { "type": "string" },
+        "employerId": { "type": "string" }
+      },
+      "required": ["title", "company", "location", "workplaceType", "type", "salaryMin", "salaryMax", "postedDate"]
+    },
+    "Applicant": {
+      "title": "Applicant",
+      "description": "A candidate application for a Palawan job",
+      "type": "object",
+      "properties": {
+        "jobId": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "company": { "type": "string" },
+        "fullName": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "appliedAt": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["jobId", "jobTitle", "fullName", "email", "appliedAt", "status"]
+    },
+    "Interview": {
+      "title": "Interview",
+      "description": "An interview scheduled between candidate and employer",
+      "type": "object",
+      "properties": {
+        "applicantId": { "type": "string" },
+        "applicantName": { "type": "string" },
+        "jobId": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["applicantId", "applicantName", "jobId", "jobTitle", "date", "time", "status"]
+    },
+    "CandidateProfile": {
+      "title": "CandidateProfile",
+      "description": "Seeker candidate digital profile and resume information",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string" },
+        "email": { "type": "string" },
+        "headline": { "type": "string" },
+        "location": { "type": "string" }
+      },
+      "required": ["fullName", "email"]
+    }
+  },
+  "firestore": {
+    "/jobs/{jobId}": {
+      "schema": { "$ref": "#/entities/Job" },
+      "description": "Public job listings created by employers"
+    },
+    "/applicants/{applicantId}": {
+      "schema": { "$ref": "#/entities/Applicant" },
+      "description": "Direct job applications submitted by job seekers"
+    },
+    "/interviews/{interviewId}": {
+      "schema": { "$ref": "#/entities/Interview" },
+      "description": "Scheduled live interviews"
+    },
+    "/candidateProfiles/{profileId}": {
+      "schema": { "$ref": "#/entities/CandidateProfile" },
+      "description": "Candidate CV and career profile"
+    }
+  }
+}

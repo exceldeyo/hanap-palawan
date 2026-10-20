@@ -1,0 +1,414 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  html {
+    /* Dynamic fluid base font scaling: smoothly scales from 14.5px on compact mobile viewports (320px) to 16px on desktop */
+    font-size: clamp(14.5px, 13.8px + 0.35vw, 16px);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    color-scheme: light;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  html.dark {
+    color-scheme: dark;
+    background-color: #020617;
+    color: #f8fafc;
+  }
+
+  html, body {
+    overflow-x: hidden;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1), color 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Smooth scrolling for inner overflow containers */
+  .overflow-y-auto, .overflow-x-auto {
+    scroll-behavior: smooth;
+  }
+
+  /* Synchronized Surface & Typography Theme Transitions - Zero Lag, Pure Harmony */
+  header,
+  footer,
+  nav,
+  main,
+  section,
+  article,
+  aside,
+  .bg-white,
+  .bg-white\/95,
+  .bg-slate-50,
+  .bg-slate-50\/50,
+  .bg-slate-50\/70,
+  .bg-slate-50\/80,
+  .bg-slate-100,
+  .bg-slate-800,
+  .bg-slate-900,
+  .bg-slate-950,
+  .border-slate-100,
+  .border-slate-200,
+  .border-slate-200\/70,
+  .border-slate-200\/80,
+  .border-slate-200\/90,
+  .border-slate-300,
+  .border-slate-700,
+  .border-slate-800,
+  .text-slate-900,
+  .text-slate-800,
+  .text-slate-700,
+  .text-slate-600,
+  .text-slate-500,
+  .text-slate-400,
+  .text-slate-300,
+  .text-slate-200,
+  .text-slate-100 {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 250ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  html.dark body {
+    background-color: #020617;
+    color: #f8fafc;
+  }
+
+  /* Dynamic heading typography scaling and overflow protection */
+  h1, h2, h3, h4, h5, h6 {
+    overflow-wrap: break-word;
+    word-break: break-word;
+    text-wrap: balance;
+    letter-spacing: -0.015em;
+  }
+
+  h1 {
+    font-size: clamp(1.35rem, 1.15rem + 1.2vw, 2.25rem);
+    line-height: clamp(1.2, 1.15 + 0.2vw, 1.28);
+  }
+
+  h2 {
+    font-size: clamp(1.18rem, 1.02rem + 0.8vw, 1.625rem);
+    line-height: clamp(1.25, 1.2 + 0.15vw, 1.35);
+  }
+
+  h3 {
+    font-size: clamp(1.05rem, 0.95rem + 0.45vw, 1.25rem);
+    line-height: clamp(1.28, 1.25 + 0.1vw, 1.38);
+  }
+
+  h4 {
+    font-size: clamp(0.95rem, 0.88rem + 0.3vw, 1.125rem);
+    line-height: clamp(1.3, 1.28 + 0.1vw, 1.4);
+  }
+
+  p, li, blockquote {
+    overflow-wrap: break-word;
+    text-wrap: pretty;
+  }
+}
+
+/* Dynamic utility scaling for headings across components to prevent mobile overflow */
+@layer utilities {
+  .fluid-heading-1 {
+    font-size: clamp(1.35rem, 1.15rem + 1.2vw, 2.25rem);
+    line-height: clamp(1.2, 1.15 + 0.2vw, 1.28);
+    overflow-wrap: break-word;
+    word-break: break-word;
+    text-wrap: balance;
+  }
+
+  .fluid-heading-2 {
+    font-size: clamp(1.18rem, 1.02rem + 0.8vw, 1.625rem);
+    line-height: clamp(1.25, 1.2 + 0.15vw, 1.35);
+    overflow-wrap: break-word;
+    word-break: break-word;
+    text-wrap: balance;
+  }
+
+  .fluid-heading-3 {
+    font-size: clamp(1.05rem, 0.95rem + 0.45vw, 1.25rem);
+    line-height: clamp(1.28, 1.25 + 0.1vw, 1.38);
+    overflow-wrap: break-word;
+    word-break: break-word;
+    text-wrap: balance;
+  }
+
+  /* Ensure text-3xl, text-2xl, and text-xl adjust dynamically on mobile to prevent clipping and awkward wrapping */
+  @media (max-width: 640px) {
+    .text-3xl {
+      font-size: clamp(1.35rem, 1.15rem + 1vw, 1.875rem) !important;
+      line-height: 1.25 !important;
+      overflow-wrap: break-word !important;
+      word-break: break-word !important;
+    }
+
+    .text-2xl {
+      font-size: clamp(1.15rem, 1.02rem + 0.7vw, 1.5rem) !important;
+      line-height: 1.3 !important;
+      overflow-wrap: break-word !important;
+      word-break: break-word !important;
+    }
+
+    .text-xl {
+      font-size: clamp(1.02rem, 0.96rem + 0.35vw, 1.25rem) !important;
+      line-height: 1.35 !important;
+      overflow-wrap: break-word !important;
+      word-break: break-word !important;
+    }
+
+    .text-lg {
+      font-size: clamp(0.95rem, 0.9rem + 0.25vw, 1.125rem) !important;
+      line-height: 1.4 !important;
+      overflow-wrap: break-word !important;
+    }
+  }
+}
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* =========================================================================
+   Global Dark Mode Palette: Emerald & Slate System
+   ========================================================================= */
+
+/* Dark Mode Backgrounds */
+.dark .bg-white {
+  background-color: #0f172a !important; /* slate-900 */
+}
+
+.dark .bg-white\/95 {
+  background-color: rgba(15, 23, 42, 0.95) !important; /* slate-900 with 95% opacity */
+}
+
+.dark .bg-slate-50 {
+  background-color: #020617 !important; /* slate-950 */
+}
+
+.dark .bg-slate-50\/50,
+.dark .bg-slate-50\/70,
+.dark .bg-slate-50\/80 {
+  background-color: rgba(30, 41, 59, 0.6) !important; /* slate-800 translucent */
+}
+
+.dark .bg-slate-100 {
+  background-color: #1e293b !important; /* slate-800 */
+}
+
+.dark .hover\:bg-slate-50:hover {
+  background-color: #1e293b !important;
+}
+
+.dark .hover\:bg-slate-100:hover {
+  background-color: #334155 !important; /* slate-700 */
+}
+
+.dark .hover\:bg-slate-200:hover,
+.dark .hover\:bg-slate-200\/60:hover {
+  background-color: #334155 !important;
+}
+
+/* Dark Mode Borders */
+.dark .border-slate-100 {
+  border-color: #1e293b !important;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-200\/70,
+.dark .border-slate-200\/80,
+.dark .border-slate-200\/90 {
+  border-color: #334155 !important; /* slate-700 */
+}
+
+.dark .border-slate-300 {
+  border-color: #475569 !important; /* slate-600 */
+}
+
+/* Dark Mode Typography - high legibility & WCAG AA contrast */
+.dark .text-slate-900 {
+  color: #f8fafc !important; /* slate-50 */
+}
+
+.dark .text-slate-800 {
+  color: #f1f5f9 !important; /* slate-100 */
+}
+
+.dark .text-slate-700 {
+  color: #e2e8f0 !important; /* slate-200 */
+}
+
+.dark .text-slate-600 {
+  color: #cbd5e1 !important; /* slate-300 */
+}
+
+.dark .text-slate-500 {
+  color: #94a3b8 !important; /* slate-400 */
+}
+
+.dark .text-slate-400 {
+  color: #64748b !important; /* slate-500 */
+}
+
+/* Emerald Accents in Dark Mode */
+.dark .bg-emerald-50,
+.dark .bg-emerald-50\/50,
+.dark .bg-emerald-50\/70,
+.dark .bg-emerald-50\/80 {
+  background-color: rgba(6, 78, 59, 0.35) !important; /* emerald-900 / 35% */
+}
+
+.dark .text-emerald-800,
+.dark .text-emerald-900,
+.dark .text-emerald-950 {
+  color: #34d399 !important; /* emerald-400 vibrant */
+}
+
+.dark .text-emerald-700 {
+  color: #6ee7b7 !important; /* emerald-300 */
+}
+
+.dark .border-emerald-100,
+.dark .border-emerald-200,
+.dark .border-emerald-300 {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Form Controls in Dark Mode */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="tel"],
+.dark input[type="url"],
+.dark input[type="number"],
+.dark input[type="date"],
+.dark input[type="time"],
+.dark select,
+.dark textarea {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #10b981 !important;
+  background-color: #1e293b !important;
+}
+
+/* Dark Modal & Dialog Backdrops */
+.dark .bg-slate-950\/60,
+.dark .bg-slate-950\/70 {
+  background-color: rgba(2, 6, 23, 0.85) !important;
+}
+
+/* Card Hover Lift & Save Feedback Micro-Animations */
+@keyframes heart-pop {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.45) rotate(-12deg); }
+  60% { transform: scale(0.88) rotate(6deg); }
+  85% { transform: scale(1.18) rotate(-3deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes save-sparkle {
+  0% { opacity: 0; transform: translateY(4px) scale(0.85); }
+  20% { opacity: 1; transform: translateY(-3px) scale(1.05); }
+  75% { opacity: 1; transform: translateY(-6px) scale(1); }
+  100% { opacity: 0; transform: translateY(-14px) scale(0.9); }
+}
+
+.animate-heart-pop {
+  animation: heart-pop 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.animate-save-sparkle {
+  animation: save-sparkle 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Shimmer Loading Animation for Skeleton Screens */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-shimmer::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer 1.5s infinite ease-in-out;
+  content: '';
+}
+
+.dark .animate-shimmer::after {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+/* View Transitions API configuration for silky crossfade/clip-path */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
+.dark::view-transition-old(root) {
+  z-index: 9999;
+}
+
+.dark::view-transition-new(root) {
+  z-index: 1;
+}
+
+
+
+
