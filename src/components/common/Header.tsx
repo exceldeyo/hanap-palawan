@@ -12,7 +12,8 @@ import {
   Sun,
   Moon,
   LogIn,
-  LogOut
+  LogOut,
+  FileText
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -36,9 +37,9 @@ export const Header: React.FC = () => {
   const employerPendingCount = applicants.filter(a => a.status === 'applied' || a.status === 'reviewing').length;
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-200 shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-200 shadow-sm">
       {/* Top Brand & Controls Row */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
           {/* Logo & Brand Zone */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
@@ -114,7 +115,20 @@ export const Header: React.FC = () => {
                   }`}
                 >
                   <User className="w-3.5 h-3.5" />
-                  <span>My Profile & CV</span>
+                  <span>My Profile</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSeekerTab('builder')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer min-h-[38px] ${
+                    seekerTab === 'builder'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-2xs border border-emerald-500'
+                      : 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/60'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Resume Builder</span>
                 </button>
               </>
             ) : (
@@ -267,7 +281,7 @@ export const Header: React.FC = () => {
       {/* Tablet and Mobile Navigation Bar (< lg): Clean row with full visibility */}
       <div className="lg:hidden border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md transition-colors">
         <div className="max-w-7xl mx-auto px-2 sm:px-3">
-          <nav className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-2 text-xs touch-pan-x">
+          <nav className="flex items-center justify-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-2 text-xs touch-pan-x">
             {currentRole === 'seeker' ? (
               <>
                 <button
@@ -315,7 +329,20 @@ export const Header: React.FC = () => {
                   }`}
                 >
                   <User className="w-3.5 h-3.5" />
-                  <span>Profile & CV</span>
+                  <span>Profile</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSeekerTab('builder')}
+                  className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer min-h-[36px] shrink-0 ${
+                    seekerTab === 'builder' 
+                      ? 'bg-emerald-600 text-white font-bold shadow-2xs' 
+                      : 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200/80 dark:border-emerald-800/80'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Resume Builder</span>
                 </button>
               </>
             ) : (

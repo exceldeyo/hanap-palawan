@@ -47,8 +47,8 @@ interface AppContextType {
   // Current view role
   currentRole: 'seeker' | 'employer';
   setRole: (role: 'seeker' | 'employer') => void;
-  seekerTab: 'jobs' | 'saved' | 'applications' | 'interviews' | 'profile' | 'news';
-  setSeekerTab: (tab: 'jobs' | 'saved' | 'applications' | 'interviews' | 'profile' | 'news') => void;
+  seekerTab: 'jobs' | 'saved' | 'applications' | 'interviews' | 'profile' | 'news' | 'builder';
+  setSeekerTab: (tab: 'jobs' | 'saved' | 'applications' | 'interviews' | 'profile' | 'news' | 'builder') => void;
   employerTab: 'pipeline' | 'jobs' | 'interviews' | 'post-job';
   setEmployerTab: (tab: 'pipeline' | 'jobs' | 'interviews' | 'post-job') => void;
 
@@ -221,7 +221,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   });
 
-  const [seekerTab, setSeekerTab] = useState<'jobs' | 'saved' | 'applications' | 'interviews' | 'profile' | 'news'>('jobs');
+  const [seekerTab, setSeekerTab] = useState<'jobs' | 'saved' | 'applications' | 'interviews' | 'profile' | 'news' | 'builder'>('jobs');
   const [employerTab, setEmployerTab] = useState<'pipeline' | 'jobs' | 'interviews' | 'post-job'>('pipeline');
 
   // Core Data
@@ -388,9 +388,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrentUser(null);
       setUserProfile(null);
       localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
-      showNotification('Naka-sign out ka na.', 'info');
+      setShowLanding(true);
+      showNotification('Matagumpay kang nag-sign out sa iyong account upang mapanatili ang seguridad ng iyong sesyon.', 'info');
     } catch (err) {
       console.warn('Sign out error', err);
+      setShowLanding(true);
+      setUserProfile(null);
+      showNotification('Matagumpay kang nag-sign out.', 'info');
     }
   };
 

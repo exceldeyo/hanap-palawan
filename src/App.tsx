@@ -6,6 +6,7 @@ import { ApplyModal } from './components/seeker/ApplyModal';
 import { MyApplicationsView } from './components/seeker/MyApplicationsView';
 import { MyInterviewsView } from './components/seeker/MyInterviewsView';
 import { ProfileResumeView } from './components/seeker/ProfileResumeView';
+import { GuidedResumeBuilder } from './components/seeker/GuidedResumeBuilder';
 import { SavedJobsView } from './components/seeker/SavedJobsView';
 import { PalawanLocalNewsView } from './components/seeker/PalawanLocalNewsView';
 import { PalawanNewsModal } from './components/seeker/PalawanNewsModal';
@@ -47,7 +48,7 @@ const AppShell: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-emerald-500 selection:text-white transition-colors duration-200">
       <Header />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-[104px] sm:pt-[116px] py-4 sm:py-6">
         {showLanding ? (
           <LandingPageView />
         ) : currentRole === 'seeker' ? (
@@ -58,6 +59,7 @@ const AppShell: React.FC = () => {
             {seekerTab === 'applications' && <MyApplicationsView />}
             {seekerTab === 'interviews' && <MyInterviewsView />}
             {seekerTab === 'profile' && <ProfileResumeView />}
+            {seekerTab === 'builder' && <GuidedResumeBuilder />}
           </>
         ) : (
           <>
