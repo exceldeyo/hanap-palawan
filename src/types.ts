@@ -108,6 +108,7 @@ export interface Applicant {
   matchScore: number;
   rating?: number;
   employerNotes: EmployerNote[];
+  seekerId?: string;
 }
 
 export interface InterviewFeedback {

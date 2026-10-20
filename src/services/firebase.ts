@@ -181,11 +181,24 @@ export async function saveInterviewToFirestore(interview: Interview) {
   }
 }
 
-export async function saveProfileToFirestore(profile: CandidateProfile) {
+export async function saveProfileToFirestore(profile: CandidateProfile, uid: string = 'default-seeker') {
   try {
-    await setDoc(doc(db, COLLECTIONS.PROFILES, 'default-seeker'), profile);
+    await setDoc(doc(db, COLLECTIONS.PROFILES, uid), profile);
   } catch (err) {
     console.warn('[Firebase] saveProfile error:', err);
+  }
+}
+
+export async function getProfileFromFirestore(uid: string = 'default-seeker'): Promise<CandidateProfile | null> {
+  try {
+    const docSnap = await getDoc(doc(db, COLLECTIONS.PROFILES, uid));
+    if (docSnap.exists()) {
+      return docSnap.data() as CandidateProfile;
+    }
+    return null;
+  } catch (err) {
+    console.warn('[Firebase] getProfile error:', err);
+    return null;
   }
 }
 

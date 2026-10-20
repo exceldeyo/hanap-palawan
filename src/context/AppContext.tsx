@@ -31,6 +31,7 @@ import {
   saveApplicantToFirestore,
   saveInterviewToFirestore,
   saveProfileToFirestore,
+  getProfileFromFirestore,
   getUserProfileFromFirestore,
   logOutUser
 } from '../services/firebase';
@@ -130,6 +131,9 @@ interface AppContextType {
   openAuthModal: (mode?: 'signin' | 'signup', targetRole?: 'seeker' | 'employer') => void;
   closeAuthModal: () => void;
   signOut: () => Promise<void>;
+  showLanding: boolean;
+  setShowLanding: React.Dispatch<React.SetStateAction<boolean>>;
+  dismissLanding: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -149,7 +153,7 @@ const STORAGE_KEYS = {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Auth state
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(() => {
+  const [userProfile, setUserProfileState] = useState<UserProfile | null>(() => {
     try {
       const saved = localStorage.getItem('hanap_palawan_user_profile_v4');
       return saved ? JSON.parse(saved) : null;
@@ -157,6 +161,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return null;
     }
   });
+
+  const [showLanding, setShowLanding] = useState<boolean>(() => {
+    try {
+      const savedUser = localStorage.getItem('hanap_palawan_user_profile_v4');
+      const seenLanding = localStorage.getItem('hanap_palawan_seen_landing_v4');
+      if (savedUser) return false;
+      return seenLanding ? false : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const dismissLanding = () => {
+    setShowLanding(false);
+    try {
+      localStorage.setItem('hanap_palawan_seen_landing_v4', 'true');
+    } catch {}
+  };
+
+  const setUserProfile: React.Dispatch<React.SetStateAction<UserProfile | null>> = (value) => {
+    setUserProfileState(prev => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      if (next) {
+        setShowLanding(false);
+        try {
+          localStorage.setItem('hanap_palawan_seen_landing_v4', 'true');
+        } catch {}
+      }
+      return next;
+    });
+  };
+
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
   const [authModalTargetRole, setAuthModalTargetRole] = useState<'seeker' | 'employer'>('seeker');
@@ -386,13 +422,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               setRoleState(profile.role);
             }
             if (profile.role === 'seeker') {
-              setCandidateProfile(prev => ({
-                ...prev,
-                fullName: profile.displayName || prev.fullName,
-                email: profile.email || prev.email,
-                location: profile.municipality ? `${profile.municipality}, Palawan` : prev.location,
-                phone: profile.phone || prev.phone
-              }));
+              const savedSeekerProfile = await getProfileFromFirestore(user.uid);
+              if (savedSeekerProfile) {
+                setCandidateProfile(savedSeekerProfile);
+              } else {
+                const freshSeekerProfile: CandidateProfile = {
+                  fullName: profile.displayName || '',
+                  email: profile.email || '',
+                  phone: profile.phone || '',
+                  headline: 'Job Seeker · Palawan',
+                  location: profile.municipality ? `${profile.municipality}, Palawan` : 'Palawan',
+                  summary: '',
+                  skills: [],
+                  experience: [],
+                  education: [],
+                  portfolioUrl: '',
+                  githubUrl: '',
+                  linkedinUrl: '',
+                  resumeFileName: '',
+                  resumeLastUpdated: new Date().toLocaleDateString()
+                };
+                setCandidateProfile(freshSeekerProfile);
+                await saveProfileToFirestore(freshSeekerProfile, user.uid);
+              }
             }
           }
         } catch (err) {
@@ -541,11 +593,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addJob = (jobData: Omit<Job, 'id' | 'postedDate' | 'employerId'>): Job => {
+    const employerId = currentUser?.uid || 'emp-local';
+    const company = userProfile?.companyName || userProfile?.displayName || jobData.company;
     const newJob: Job = {
       ...jobData,
+      company,
       id: 'job-' + Date.now(),
       postedDate: new Date().toISOString(),
-      employerId: 'emp-local'
+      employerId
     };
     setJobs(prev => [newJob, ...prev]);
     setSelectedJobId(newJob.id);
@@ -602,7 +657,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       screeningAnswers: data.screeningAnswers,
       status: 'applied',
       matchScore: 94,
-      employerNotes: []
+      employerNotes: [],
+      seekerId: currentUser?.uid || 'seeker-local'
     };
 
     setApplicants(prev => [newApplicant, ...prev]);
@@ -724,7 +780,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateCandidateProfile = (updates: Partial<CandidateProfile>) => {
     setCandidateProfile(prev => {
       const updated = { ...prev, ...updates };
-      saveProfileToFirestore(updated);
+      const uid = currentUser?.uid || 'default-seeker';
+      saveProfileToFirestore(updated, uid);
       return updated;
     });
     showNotification('Na-update ang inyong profile at resume info!');
@@ -811,7 +868,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         authModalTargetRole,
         openAuthModal,
         closeAuthModal,
-        signOut
+        signOut,
+        showLanding,
+        setShowLanding,
+        dismissLanding
       }}
     >
       {children}

@@ -12,11 +12,49 @@ import {
   Save, 
   GraduationCap, 
   Briefcase, 
-  ExternalLink 
+  ExternalLink,
+  Heart,
+  Calendar
 } from 'lucide-react';
 
 export const ProfileResumeView: React.FC = () => {
-  const { candidateProfile, updateCandidateProfile } = useApp();
+  const { candidateProfile, updateCandidateProfile, jobs, savedJobIds, toggleSaveJob, interviews, setActiveInterviewRoom, userProfile, openAuthModal } = useApp();
+  const [activeSubTab, setActiveSubTab] = useState<'profile' | 'saved' | 'interviews'>('profile');
+
+  if (!userProfile) {
+    return (
+      <div className="max-w-2xl mx-auto py-12 px-4 text-center space-y-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm my-8">
+        <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">
+          <User className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">I-connect ang Iyong Profile at CV</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto">
+            Mag-sign in o mag-sign up para ma-access ang iyong personal Palawan CV, saved jobs, at interview schedule. Lahat ay naka-sync sa iyong account!
+          </p>
+        </div>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => openAuthModal('signin', 'seeker')}
+            className="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition-all cursor-pointer"
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => openAuthModal('signup', 'seeker')}
+            className="px-5 py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
+          >
+            Sign Up (Bagong Account)
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const savedJobs = jobs.filter(j => savedJobIds.includes(j.id));
+  const myInterviews = interviews.filter(i => i.applicantEmail === candidateProfile.email);
 
   const [fullName, setFullName] = useState(candidateProfile.fullName);
   const [email, setEmail] = useState(candidateProfile.email);
@@ -100,7 +138,127 @@ export const ProfileResumeView: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Profile Form */}
+      {/* Quick Navigation sub-tabs inside Profile & CV */}
+      <div className="flex bg-white border border-slate-200 rounded-xl p-1.5 shadow-xs overflow-x-auto gap-1">
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('profile')}
+          className={`flex-1 px-4 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[40px] ${
+            activeSubTab === 'profile'
+              ? 'bg-emerald-600 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          }`}
+        >
+          <User className="w-4 h-4" />
+          <span>Profile & CV Details</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('saved')}
+          className={`flex-1 px-4 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[40px] ${
+            activeSubTab === 'saved'
+              ? 'bg-emerald-600 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          }`}
+        >
+          <Heart className="w-4 h-4" />
+          <span>Saved Jobs ({savedJobIds.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('interviews')}
+          className={`flex-1 px-4 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[40px] ${
+            activeSubTab === 'interviews'
+              ? 'bg-emerald-600 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          }`}
+        >
+          <Calendar className="w-4 h-4" />
+          <span>Interviews ({myInterviews.length})</span>
+        </button>
+      </div>
+
+      {activeSubTab === 'saved' ? (
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-4">
+          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <Heart className="w-4 h-4 text-rose-500" />
+            <span>Nai-save na mga Trabaho (Saved Jobs)</span>
+          </h3>
+          {savedJobs.length === 0 ? (
+            <div className="text-center py-10 space-y-2">
+              <Heart className="w-8 h-8 text-slate-300 mx-auto" />
+              <p className="text-xs text-slate-500">Wala ka pang naka-save na trabaho.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {savedJobs.map(job => (
+                <div key={job.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 flex flex-col justify-between">
+                  <div>
+                    <div className="text-[11px] font-semibold text-emerald-700">{job.company}</div>
+                    <div className="text-xs font-bold text-slate-900 mt-0.5">{job.title}</div>
+                    <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-slate-400" />
+                      <span>{job.location}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                    <span className="font-mono text-[11px] font-semibold text-slate-800">
+                      ₱{(job.salaryMin / 1000).toFixed(0)}k - ₱{(job.salaryMax / 1000).toFixed(0)}k
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => toggleSaveJob(job.id)}
+                      className="text-xs font-semibold text-rose-600 hover:underline cursor-pointer"
+                    >
+                      Tanggalin
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : activeSubTab === 'interviews' ? (
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-4">
+          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-amber-500" />
+            <span>Nai-schedule na Interview</span>
+          </h3>
+          {myInterviews.length === 0 ? (
+            <div className="text-center py-10 space-y-2">
+              <Calendar className="w-8 h-8 text-slate-300 mx-auto" />
+              <p className="text-xs text-slate-500">Wala pang nakatakdang interview para sa iyo.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {myInterviews.map(interview => (
+                <div key={interview.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">{interview.jobTitle}</div>
+                    <div className="text-[11px] text-emerald-700 font-semibold">{interview.company} · {interview.stage}</div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      {interview.date} ({interview.time}) - {interview.durationMinutes} mins
+                    </div>
+                  </div>
+                  {interview.status !== 'completed' && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveInterviewRoom(interview)}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors cursor-pointer shrink-0"
+                    >
+                      Pumasok sa Video Room
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {activeSubTab === 'profile' && (
       <form onSubmit={handleSaveProfile} className="bg-white border border-slate-200 rounded-xl p-4 sm:p-8 shadow-xs space-y-6 text-xs text-slate-700">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
@@ -292,6 +450,7 @@ export const ProfileResumeView: React.FC = () => {
           ))}
         </div>
       </form>
+      )}
     </div>
   );
 };

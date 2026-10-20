@@ -19,6 +19,7 @@ import { ScheduleInterviewModal } from './components/employer/ScheduleInterviewM
 import { LiveInterviewRoomModal } from './components/employer/LiveInterviewRoomModal';
 import { SiteTransparencyModal, TransparencyTab } from './components/common/SiteTransparencyModal';
 import { AuthModal } from './components/common/AuthModal';
+import { LandingPageView } from './components/common/LandingPageView';
 import { BackToTop } from './components/common/BackToTop';
 import { JobAlertSignup } from './components/common/JobAlertSignup';
 import { CheckCircle2, Info, X, Palmtree, Sparkles, Heart, ShieldCheck, HelpCircle } from 'lucide-react';
@@ -38,7 +39,8 @@ const AppShell: React.FC = () => {
     reviewApplicant,
     schedulingForApplicant,
     activeInterviewRoom,
-    activeNewsDetail
+    activeNewsDetail,
+    showLanding
   } = useApp();
 
   return (
@@ -46,7 +48,9 @@ const AppShell: React.FC = () => {
       <Header />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
-        {currentRole === 'seeker' ? (
+        {showLanding ? (
+          <LandingPageView />
+        ) : currentRole === 'seeker' ? (
           <>
             {seekerTab === 'jobs' && <JobSearchFeed />}
             {seekerTab === 'news' && <PalawanLocalNewsView />}

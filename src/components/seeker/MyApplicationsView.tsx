@@ -13,9 +13,14 @@ import {
 } from 'lucide-react';
 
 export const MyApplicationsView: React.FC = () => {
-  const { applicants, candidateProfile, setSeekerTab, setSelectedJobId, setActiveInterviewRoom, interviews } = useApp();
+  const { applicants, candidateProfile, setSeekerTab, setSelectedJobId, setActiveInterviewRoom, interviews, currentUser, userProfile } = useApp();
 
-  const myApplications = applicants.filter(a => a.email === candidateProfile.email);
+  const myApplications = applicants.filter(a => 
+    (currentUser && a.seekerId === currentUser.uid) || 
+    a.email === candidateProfile.email || 
+    (userProfile && a.email === userProfile.email) ||
+    (!a.seekerId)
+  );
 
   const getStatusBadge = (status: ApplicantStatus) => {
     switch (status) {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { UserRole } from '../../types';
+import { UserRole, CandidateProfile } from '../../types';
 import { 
   signUpWithEmail, 
   signInWithEmail, 
@@ -58,7 +58,7 @@ export const AuthModal: React.FC = () => {
     authModalTargetRole,
     setUserProfile,
     setRole,
-    setCandidateProfile
+    updateCandidateProfile
   } = useApp();
 
   const [mode, setMode] = useState<'signin' | 'signup'>(authModalMode || 'signin');
@@ -162,13 +162,22 @@ export const AuthModal: React.FC = () => {
         setUserProfile(profile);
         setRole(profile.role);
         if (profile.role === 'seeker') {
-          setCandidateProfile(prev => ({
-            ...prev,
-            fullName: profile.displayName || prev.fullName,
-            email: profile.email || prev.email,
-            location: profile.municipality ? `${profile.municipality}, Palawan` : prev.location,
-            phone: profile.phone || prev.phone
-          }));
+          updateCandidateProfile({
+            fullName: profile.displayName,
+            email: profile.email,
+            phone: profile.phone || '',
+            headline: 'Job Seeker · Palawan',
+            location: profile.municipality ? `${profile.municipality}, Palawan` : 'Palawan',
+            summary: '',
+            skills: [],
+            experience: [],
+            education: [],
+            portfolioUrl: '',
+            githubUrl: '',
+            linkedinUrl: '',
+            resumeFileName: '',
+            resumeLastUpdated: new Date().toLocaleDateString()
+          });
         }
 
         setSuccessMsg(`Maligayang pagdating sa Hanap Palawan, ${profile.displayName}!`);
@@ -181,13 +190,22 @@ export const AuthModal: React.FC = () => {
           setUserProfile(profile);
           setRole(profile.role);
           if (profile.role === 'seeker') {
-            setCandidateProfile(prev => ({
-              ...prev,
-              fullName: profile.displayName || prev.fullName,
-              email: profile.email || prev.email,
-              location: profile.municipality ? `${profile.municipality}, Palawan` : prev.location,
-              phone: profile.phone || prev.phone
-            }));
+            updateCandidateProfile({
+              fullName: profile.displayName,
+              email: profile.email,
+              phone: profile.phone || '',
+              headline: 'Job Seeker · Palawan',
+              location: profile.municipality ? `${profile.municipality}, Palawan` : 'Palawan',
+              summary: '',
+              skills: [],
+              experience: [],
+              education: [],
+              portfolioUrl: '',
+              githubUrl: '',
+              linkedinUrl: '',
+              resumeFileName: '',
+              resumeLastUpdated: new Date().toLocaleDateString()
+            });
           }
           setSuccessMsg(`Maligayang pagbabalik, ${profile.displayName}!`);
           setTimeout(() => {
@@ -305,65 +323,63 @@ export const AuthModal: React.FC = () => {
             </div>
           )}
 
-          {/* Role Selection on Sign Up */}
-          {mode === 'signup' && (
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                Piliin ang inyong uri ng account:
-              </label>
-              <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setSelectedRole('seeker')}
-                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5 ${
-                    selectedRole === 'seeker'
-                      ? 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/20'
-                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
-                      <Briefcase className="w-3.5 h-3.5" />
-                    </div>
-                    {selectedRole === 'seeker' && (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    )}
+          {/* Role Selection for both Sign In and Sign Up */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              Piliin ang inyong uri ng account / papel:
+            </label>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSelectedRole('seeker')}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5 ${
+                  selectedRole === 'seeker'
+                    ? 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/20'
+                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+                    <Briefcase className="w-3.5 h-3.5" />
                   </div>
-                  <div>
-                    <span className="font-bold text-xs block">Job Seeker</span>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight block mt-0.5">
-                      Maghahanap ng trabaho at mag-aapply sa Palawan
-                    </span>
-                  </div>
-                </button>
+                  {selectedRole === 'seeker' && (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  )}
+                </div>
+                <div>
+                  <span className="font-bold text-xs block">Job Seeker</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight block mt-0.5">
+                    Maghahanap ng trabaho at mag-aapply sa Palawan
+                  </span>
+                </div>
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => setSelectedRole('employer')}
-                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5 ${
-                    selectedRole === 'employer'
-                      ? 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/20'
-                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="w-7 h-7 rounded-lg bg-teal-600 text-white flex items-center justify-center">
-                      <Building2 className="w-3.5 h-3.5" />
-                    </div>
-                    {selectedRole === 'employer' && (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    )}
+              <button
+                type="button"
+                onClick={() => setSelectedRole('employer')}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5 ${
+                  selectedRole === 'employer'
+                    ? 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/20'
+                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="w-7 h-7 rounded-lg bg-teal-600 text-white flex items-center justify-center">
+                    <Building2 className="w-3.5 h-3.5" />
                   </div>
-                  <div>
-                    <span className="font-bold text-xs block">Employer / Negosyo</span>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight block mt-0.5">
-                      Mag-popost ng opening at magha-hire ng tauhan
-                    </span>
-                  </div>
-                </button>
-              </div>
+                  {selectedRole === 'employer' && (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  )}
+                </div>
+                <div>
+                  <span className="font-bold text-xs block">Employer / Negosyo</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight block mt-0.5">
+                    Mag-popost ng opening at magha-hire ng tauhan
+                  </span>
+                </div>
+              </button>
             </div>
-          )}
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
             {/* Full Name / Contact Person for Sign Up */}
