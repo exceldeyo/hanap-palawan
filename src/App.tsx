@@ -18,6 +18,7 @@ import { ApplicantReviewModal } from './components/employer/ApplicantReviewModal
 import { ScheduleInterviewModal } from './components/employer/ScheduleInterviewModal';
 import { LiveInterviewRoomModal } from './components/employer/LiveInterviewRoomModal';
 import { SiteTransparencyModal, TransparencyTab } from './components/common/SiteTransparencyModal';
+import { AuthModal } from './components/common/AuthModal';
 import { BackToTop } from './components/common/BackToTop';
 import { JobAlertSignup } from './components/common/JobAlertSignup';
 import { CheckCircle2, Info, X, Palmtree, Sparkles, Heart, ShieldCheck, HelpCircle } from 'lucide-react';
@@ -77,6 +78,7 @@ const AppShell: React.FC = () => {
           onClose={() => setTransparencyTab(null)} 
         />
       )}
+      <AuthModal />
 
       {/* Back to Top Floating Action Button */}
       <BackToTop />

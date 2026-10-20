@@ -5,12 +5,12 @@ import { generateJobPostingDraft } from '../../services/geminiService';
 import { PlusCircle, Trash2, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
 
 export const PostJobModal: React.FC = () => {
-  const { addJob, setEmployerTab } = useApp();
+  const { addJob, setEmployerTab, userProfile, openAuthModal } = useApp();
 
   const [title, setTitle] = useState('');
-  const [company, setCompany] = useState('Palawan Tech Innovation Hub');
+  const [company, setCompany] = useState(userProfile?.companyName || 'Palawan Tech Innovation Hub');
   const [department, setDepartment] = useState('Engineering & Digital');
-  const [location, setLocation] = useState('Puerto Princesa City, Palawan');
+  const [location, setLocation] = useState(userProfile?.municipality ? `${userProfile.municipality}, Palawan` : 'Puerto Princesa City, Palawan');
   const [workplaceType, setWorkplaceType] = useState<WorkplaceType>('Hybrid');
   const [type, setType] = useState<JobType>('Full-time');
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>('Mid Level');
@@ -158,6 +158,31 @@ export const PostJobModal: React.FC = () => {
             <span>{isAiGenerating ? 'Bumubuo ng Job Details...' : 'Auto-Draft with Palawan AI'}</span>
           </button>
         </div>
+
+        {(!userProfile || userProfile.role !== 'employer') && (
+          <div className="mb-6 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                <PlusCircle className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-emerald-950 dark:text-emerald-100">
+                  Nagpo-post bilang Guest Employer
+                </p>
+                <p className="text-[11px] text-emerald-800 dark:text-emerald-300">
+                  Nais mo bang gumawa ng libreng Employer Account para mai-save ang inyong kompanya at profile?
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => openAuthModal('signup', 'employer')}
+              className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer whitespace-nowrap self-start sm:self-auto"
+            >
+              Gumawa ng Employer Account
+            </button>
+          </div>
+        )}
 
         {aiNotice && (
           <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-center justify-between gap-2">

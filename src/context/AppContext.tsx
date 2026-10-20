@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { 
   Job, 
   Applicant, 
@@ -6,7 +7,9 @@ import {
   CandidateProfile, 
   ApplicantStatus, 
   InterviewFeedback,
-  PalawanNewsItem 
+  PalawanNewsItem,
+  UserProfile,
+  UserRole
 } from '../types';
 import { 
   INITIAL_JOBS, 
@@ -16,6 +19,7 @@ import {
 } from '../data/mockData';
 import { INITIAL_PALAWAN_NEWS } from '../data/palawanNewsData';
 import { 
+  auth,
   testConnection,
   initAuth,
   seedInitialFirestoreData,
@@ -26,7 +30,9 @@ import {
   deleteJobFromFirestore,
   saveApplicantToFirestore,
   saveInterviewToFirestore,
-  saveProfileToFirestore
+  saveProfileToFirestore,
+  getUserProfileFromFirestore,
+  logOutUser
 } from '../services/firebase';
 
 interface NotificationItem {
@@ -113,6 +119,17 @@ interface AppContextType {
   // Notifications
   notifications: NotificationItem[];
   dismissNotification: (id: string) => void;
+
+  // Auth & User Accounts
+  currentUser: User | null;
+  userProfile: UserProfile | null;
+  setUserProfile: React.Dispatch<React.SetStateAction<UserProfile | null>>;
+  isAuthModalOpen: boolean;
+  authModalMode: 'signin' | 'signup';
+  authModalTargetRole: 'seeker' | 'employer';
+  openAuthModal: (mode?: 'signin' | 'signup', targetRole?: 'seeker' | 'employer') => void;
+  closeAuthModal: () => void;
+  signOut: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -125,10 +142,25 @@ const STORAGE_KEYS = {
   SAVED_JOBS: 'hanap_palawan_saved_jobs_v4',
   ROLE: 'hanap_palawan_role_v4',
   BOOKMARKED_NEWS: 'hanap_palawan_bookmarked_news_v4',
-  THEME: 'hanap_palawan_theme_v4'
+  THEME: 'hanap_palawan_theme_v4',
+  USER_PROFILE: 'hanap_palawan_user_profile_v4'
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Auth state
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(() => {
+    try {
+      const saved = localStorage.getItem('hanap_palawan_user_profile_v4');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
+  const [authModalTargetRole, setAuthModalTargetRole] = useState<'seeker' | 'employer'>('seeker');
+
   // Role & Navigation
   const [currentRole, setRoleState] = useState<'seeker' | 'employer'>(() => {
     try {
@@ -306,6 +338,70 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (typeof unsubApplicants === 'function') unsubApplicants();
       if (typeof unsubInterviews === 'function') unsubInterviews();
     };
+  }, []);
+
+  // Auth Modal Controls
+  const openAuthModal = (mode: 'signin' | 'signup' = 'signin', targetRole: 'seeker' | 'employer' = currentRole) => {
+    setAuthModalMode(mode);
+    setAuthModalTargetRole(targetRole);
+    setIsAuthModalOpen(true);
+  };
+
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+  };
+
+  const signOut = async () => {
+    try {
+      await logOutUser();
+      setCurrentUser(null);
+      setUserProfile(null);
+      localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+      showNotification('Naka-sign out ka na.', 'info');
+    } catch (err) {
+      console.warn('Sign out error', err);
+    }
+  };
+
+  useEffect(() => {
+    if (userProfile) {
+      try {
+        localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(userProfile));
+      } catch (e) {
+        console.warn('Storage sync error', e);
+      }
+    }
+  }, [userProfile]);
+
+  // Auth State Listener
+  useEffect(() => {
+    const unsubAuth = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      if (user && !user.isAnonymous) {
+        try {
+          const profile = await getUserProfileFromFirestore(user.uid);
+          if (profile) {
+            setUserProfile(profile);
+            if (profile.role) {
+              setRoleState(profile.role);
+            }
+            if (profile.role === 'seeker') {
+              setCandidateProfile(prev => ({
+                ...prev,
+                fullName: profile.displayName || prev.fullName,
+                email: profile.email || prev.email,
+                location: profile.municipality ? `${profile.municipality}, Palawan` : prev.location,
+                phone: profile.phone || prev.phone
+              }));
+            }
+          }
+        } catch (err) {
+          console.warn('[Firebase Auth] Profile sync error', err);
+        }
+      }
+    });
+
+    return () => unsubAuth();
   }, []);
 
   // Sync document element dark class with theme
@@ -706,7 +802,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setTheme,
         toggleTheme,
         notifications,
-        dismissNotification
+        dismissNotification,
+        currentUser,
+        userProfile,
+        setUserProfile,
+        isAuthModalOpen,
+        authModalMode,
+        authModalTargetRole,
+        openAuthModal,
+        closeAuthModal,
+        signOut
       }}
     >
       {children}

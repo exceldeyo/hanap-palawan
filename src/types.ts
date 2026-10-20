@@ -173,3 +173,16 @@ export interface PalawanNewsItem {
   relatedSearchKeywords: string[];
   isFeatured?: boolean;
 }
+
+export type UserRole = 'seeker' | 'employer';
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  role: UserRole;
+  municipality?: string;
+  companyName?: string;
+  phone?: string;
+  createdAt: string;
+}

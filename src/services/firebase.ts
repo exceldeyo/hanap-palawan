@@ -1,8 +1,20 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, User } from 'firebase/auth';
+import { 
+  getAuth, 
+  signInAnonymously, 
+  onAuthStateChanged, 
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup,
+  User 
+} from 'firebase/auth';
 import { 
   getFirestore, 
   doc, 
+  getDoc,
   getDocFromServer, 
   collection, 
   getDocs, 
@@ -12,7 +24,7 @@ import {
   Firestore
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
-import { Job, Applicant, Interview, CandidateProfile } from '../types';
+import { Job, Applicant, Interview, CandidateProfile, UserProfile, UserRole } from '../types';
 
 // Initialize Firebase App
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -58,7 +70,8 @@ export const COLLECTIONS = {
   JOBS: 'jobs',
   APPLICANTS: 'applicants',
   INTERVIEWS: 'interviews',
-  PROFILES: 'candidateProfiles'
+  PROFILES: 'candidateProfiles',
+  USERS: 'users'
 };
 
 // Seed initial data if Firestore is empty so the live app has preloaded Palawan jobs
@@ -174,4 +187,101 @@ export async function saveProfileToFirestore(profile: CandidateProfile) {
   } catch (err) {
     console.warn('[Firebase] saveProfile error:', err);
   }
+}
+
+// User Profile & Authentication Services
+export async function getUserProfileFromFirestore(uid: string): Promise<UserProfile | null> {
+  try {
+    const docRef = doc(db, COLLECTIONS.USERS, uid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data() as UserProfile;
+    }
+    return null;
+  } catch (err) {
+    console.warn('[Firebase] getUserProfile error:', err);
+    return null;
+  }
+}
+
+export async function saveUserProfileToFirestore(profile: UserProfile): Promise<void> {
+  try {
+    await setDoc(doc(db, COLLECTIONS.USERS, profile.uid), profile, { merge: true });
+  } catch (err) {
+    console.warn('[Firebase] saveUserProfile error:', err);
+    throw err;
+  }
+}
+
+export async function signUpWithEmail(
+  email: string, 
+  pass: string, 
+  displayName: string, 
+  role: UserRole,
+  extra?: { companyName?: string; municipality?: string; phone?: string }
+): Promise<UserProfile> {
+  const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+  const user = userCredential.user;
+
+  await updateProfile(user, { displayName });
+
+  const profile: UserProfile = {
+    uid: user.uid,
+    email: user.email || email,
+    displayName: displayName || (role === 'employer' ? extra?.companyName || 'Palawan Employer' : 'Palaweño Seeker'),
+    role,
+    municipality: extra?.municipality || 'Puerto Princesa',
+    companyName: extra?.companyName,
+    phone: extra?.phone,
+    createdAt: new Date().toISOString()
+  };
+
+  await saveUserProfileToFirestore(profile);
+  return profile;
+}
+
+export async function signInWithEmail(email: string, pass: string): Promise<UserProfile | null> {
+  const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+  const user = userCredential.user;
+  let profile = await getUserProfileFromFirestore(user.uid);
+  
+  if (!profile) {
+    // Fallback profile if user doc didn't exist yet
+    profile = {
+      uid: user.uid,
+      email: user.email || email,
+      displayName: user.displayName || email.split('@')[0],
+      role: 'seeker',
+      municipality: 'Puerto Princesa',
+      createdAt: new Date().toISOString()
+    };
+    await saveUserProfileToFirestore(profile);
+  }
+
+  return profile;
+}
+
+export async function signInWithGoogle(role: UserRole = 'seeker'): Promise<UserProfile> {
+  const provider = new GoogleAuthProvider();
+  const userCredential = await signInWithPopup(auth, provider);
+  const user = userCredential.user;
+
+  let profile = await getUserProfileFromFirestore(user.uid);
+  if (!profile) {
+    profile = {
+      uid: user.uid,
+      email: user.email || '',
+      displayName: user.displayName || 'Palaweño User',
+      role,
+      municipality: 'Puerto Princesa',
+      createdAt: new Date().toISOString()
+    };
+    await saveUserProfileToFirestore(profile);
+  }
+
+  return profile;
+}
+
+export async function logOutUser(): Promise<void> {
+  await signOut(auth);
 }

@@ -11,30 +11,36 @@ service cloud.firestore {
       return id is string && id.size() > 0 && id.size() <= 128;
     }
 
-    // Public and authenticated read for jobs; authenticated write
+    // Public read and open posting for jobs
     match /jobs/{jobId} {
-      allow read: if isValidId(jobId);
-      allow create, update, delete: if isAuthenticated() && isValidId(jobId);
+      allow read: if true;
+      allow write: if isValidId(jobId);
     }
 
     // Applicants submitted by job seekers
     match /applicants/{applicantId} {
-      allow read, write: if isAuthenticated() && isValidId(applicantId);
+      allow read, write: if isValidId(applicantId);
     }
 
     // Scheduled interviews
     match /interviews/{interviewId} {
-      allow read, write: if isAuthenticated() && isValidId(interviewId);
+      allow read, write: if isValidId(interviewId);
     }
 
     // Candidate Profiles
     match /candidateProfiles/{profileId} {
-      allow read, write: if isAuthenticated() && isValidId(profileId);
+      allow read, write: if isValidId(profileId);
+    }
+
+    // Registered User Accounts
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if isValidId(userId);
     }
 
     // Test connection document
     match /test/{docId} {
-      allow read: if true;
+      allow read, write: if true;
     }
   }
 }

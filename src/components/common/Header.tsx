@@ -12,7 +12,10 @@ import {
   Palmtree,
   Users,
   Sun,
-  Moon
+  Moon,
+  LogIn,
+  LogOut,
+  UserCheck
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -29,7 +32,10 @@ export const Header: React.FC = () => {
     candidateProfile,
     resetDemoData,
     theme,
-    toggleTheme
+    toggleTheme,
+    userProfile,
+    openAuthModal,
+    signOut
   } = useApp();
 
   const myApplicationsCount = applicants.filter(a => a.email === candidateProfile.email).length;
@@ -216,14 +222,14 @@ export const Header: React.FC = () => {
             )}
           </nav>
 
-          {/* Right Action: Role Switcher, Theme & Reset */}
+          {/* Right Action: Role Switcher, Auth, Theme & Reset */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Role switch toggle pill */}
             <div className="p-0.5 sm:p-1 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center text-xs font-semibold border border-slate-200/60 dark:border-slate-700/80 shadow-2xs shrink-0">
               <button
                 type="button"
                 onClick={() => setRole('seeker')}
-                className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs transition-all cursor-pointer min-h-[30px] sm:min-h-[34px] flex items-center gap-1 whitespace-nowrap ${
+                className={`px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs transition-all cursor-pointer min-h-[30px] sm:min-h-[34px] flex items-center gap-1 whitespace-nowrap ${
                   currentRole === 'seeker'
                     ? 'bg-emerald-600 text-white shadow-xs font-bold'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
@@ -234,7 +240,7 @@ export const Header: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setRole('employer')}
-                className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs transition-all cursor-pointer min-h-[30px] sm:min-h-[34px] flex items-center gap-1 whitespace-nowrap ${
+                className={`px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs transition-all cursor-pointer min-h-[30px] sm:min-h-[34px] flex items-center gap-1 whitespace-nowrap ${
                   currentRole === 'employer'
                     ? 'bg-emerald-600 text-white shadow-xs font-bold'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
@@ -243,6 +249,47 @@ export const Header: React.FC = () => {
                 <span>Employer</span>
               </button>
             </div>
+
+            {/* Auth Button or User Profile Badge */}
+            {userProfile ? (
+              <div className="flex items-center gap-1 sm:gap-1.5 pl-1 border-l border-slate-200 dark:border-slate-800">
+                <div 
+                  className="flex items-center gap-1.5 py-1 px-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200/80 dark:border-emerald-800/80 text-xs shadow-2xs"
+                  title={`${userProfile.displayName} (${userProfile.email})`}
+                >
+                  <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                    {userProfile.displayName ? userProfile.displayName.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <div className="hidden sm:flex flex-col text-left leading-none">
+                    <span className="font-bold text-[11px] text-slate-800 dark:text-slate-100 max-w-[100px] truncate">
+                      {userProfile.role === 'employer' && userProfile.companyName ? userProfile.companyName : userProfile.displayName}
+                    </span>
+                    <span className="text-[9px] font-semibold text-emerald-700 dark:text-emerald-400 capitalize">
+                      {userProfile.role === 'employer' ? 'Negosyo' : 'Job Seeker'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  title="Mag-sign out sa account"
+                  className="p-1.5 sm:p-2 text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl transition-colors cursor-pointer min-h-[32px] sm:min-h-[36px] min-w-[32px] sm:min-w-[36px] flex items-center justify-center border border-transparent hover:border-rose-200 dark:hover:border-rose-800 shadow-2xs shrink-0"
+                  aria-label="Mag-sign out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openAuthModal('signin')}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer min-h-[30px] sm:min-h-[34px] bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs hover:shadow-xs shrink-0"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Sign In / Sign Up</span>
+                <span className="sm:hidden">Sign In</span>
+              </button>
+            )}
 
             {/* Global Dark Mode Theme Switcher - clean square icon button on all breakpoints */}
             <button

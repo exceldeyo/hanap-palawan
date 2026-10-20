@@ -64,6 +64,21 @@
         "location": { "type": "string" }
       },
       "required": ["fullName", "email"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role and account info",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["seeker", "employer"] },
+        "municipality": { "type": "string" },
+        "companyName": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "role", "displayName"]
     }
   },
   "firestore": {
@@ -82,6 +97,10 @@
     "/candidateProfiles/{profileId}": {
       "schema": { "$ref": "#/entities/CandidateProfile" },
       "description": "Candidate CV and career profile"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Registered user accounts for job seekers and employers"
     }
   }
 }
