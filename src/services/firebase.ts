@@ -102,18 +102,67 @@ export async function seedInitialFirestoreData(
   }
 }
 
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  };
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
 // Real-time synchronization listeners
 export function subscribeToJobs(onUpdate: (jobs: Job[]) => void) {
   return onSnapshot(collection(db, COLLECTIONS.JOBS), snapshot => {
-    if (!snapshot.empty) {
-      const items: Job[] = [];
-      snapshot.forEach(docSnap => {
-        items.push(docSnap.data() as Job);
+    const items: Job[] = [];
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data() as Job;
+      items.push({
+        ...data,
+        id: data.id || docSnap.id
       });
-      // Sort newest posted date
-      items.sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime());
-      onUpdate(items);
-    }
+    });
+    // Sort newest posted date
+    items.sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime());
+    onUpdate(items);
   }, err => {
     console.warn('[Firebase] Jobs listener error:', err);
   });
@@ -121,14 +170,16 @@ export function subscribeToJobs(onUpdate: (jobs: Job[]) => void) {
 
 export function subscribeToApplicants(onUpdate: (applicants: Applicant[]) => void) {
   return onSnapshot(collection(db, COLLECTIONS.APPLICANTS), snapshot => {
-    if (!snapshot.empty) {
-      const items: Applicant[] = [];
-      snapshot.forEach(docSnap => {
-        items.push(docSnap.data() as Applicant);
+    const items: Applicant[] = [];
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data() as Applicant;
+      items.push({
+        ...data,
+        id: data.id || docSnap.id
       });
-      items.sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime());
-      onUpdate(items);
-    }
+    });
+    items.sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime());
+    onUpdate(items);
   }, err => {
     console.warn('[Firebase] Applicants listener error:', err);
   });
@@ -136,13 +187,15 @@ export function subscribeToApplicants(onUpdate: (applicants: Applicant[]) => voi
 
 export function subscribeToInterviews(onUpdate: (interviews: Interview[]) => void) {
   return onSnapshot(collection(db, COLLECTIONS.INTERVIEWS), snapshot => {
-    if (!snapshot.empty) {
-      const items: Interview[] = [];
-      snapshot.forEach(docSnap => {
-        items.push(docSnap.data() as Interview);
+    const items: Interview[] = [];
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data() as Interview;
+      items.push({
+        ...data,
+        id: data.id || docSnap.id
       });
-      onUpdate(items);
-    }
+    });
+    onUpdate(items);
   }, err => {
     console.warn('[Firebase] Interviews listener error:', err);
   });
@@ -160,6 +213,18 @@ export async function saveJobToFirestore(job: Job) {
 export async function deleteJobFromFirestore(jobId: string) {
   try {
     await deleteDoc(doc(db, COLLECTIONS.JOBS, jobId));
+    // Also clean up any documents where the inner id field matches jobId
+    const snap = await getDocs(collection(db, COLLECTIONS.JOBS));
+    const deletions: Promise<void>[] = [];
+    snap.forEach(docSnap => {
+      const data = docSnap.data() as Job;
+      if (docSnap.id === jobId || data.id === jobId) {
+        deletions.push(deleteDoc(doc(db, COLLECTIONS.JOBS, docSnap.id)));
+      }
+    });
+    if (deletions.length > 0) {
+      await Promise.all(deletions);
+    }
   } catch (err) {
     console.warn('[Firebase] deleteJob error:', err);
   }
@@ -233,6 +298,10 @@ export async function signUpWithEmail(
   role: UserRole,
   extra?: { companyName?: string; municipality?: string; phone?: string }
 ): Promise<UserProfile> {
+  try {
+    localStorage.setItem('hanap_palawan_pending_auth_role', role);
+  } catch {}
+
   const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
   const user = userCredential.user;
 
@@ -259,6 +328,10 @@ export async function signInWithEmail(
   role: UserRole = 'seeker',
   extra?: { companyName?: string; municipality?: string; phone?: string }
 ): Promise<UserProfile> {
+  try {
+    localStorage.setItem('hanap_palawan_pending_auth_role', role);
+  } catch {}
+
   let user;
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, pass);
@@ -276,45 +349,52 @@ export async function signInWithEmail(
     }
   }
 
-  let profile = await getUserProfileFromFirestore(user.uid);
-  if (!profile || profile.role !== role) {
-    profile = {
-      uid: user.uid,
-      email: user.email || email,
-      displayName: user.displayName || (role === 'employer' ? extra?.companyName || 'Palawan Enterprise' : 'Palaweño Seeker'),
-      role,
-      municipality: extra?.municipality || profile?.municipality || 'Puerto Princesa',
-      companyName: role === 'employer' ? extra?.companyName || profile?.companyName : undefined,
-      phone: extra?.phone || profile?.phone,
-      createdAt: profile?.createdAt || new Date().toISOString()
-    };
-    await saveUserProfileToFirestore(profile);
-  }
+  const existingProfile = await getUserProfileFromFirestore(user.uid);
+  const profile: UserProfile = {
+    ...(existingProfile || {}),
+    uid: user.uid,
+    email: user.email || email,
+    displayName: existingProfile?.displayName || user.displayName || (role === 'employer' ? extra?.companyName || 'Palawan Enterprise' : 'Palaweño Seeker'),
+    role,
+    municipality: extra?.municipality || existingProfile?.municipality || 'Puerto Princesa',
+    companyName: role === 'employer' ? (extra?.companyName || existingProfile?.companyName || user.displayName || 'Palawan Enterprise') : existingProfile?.companyName,
+    phone: extra?.phone || existingProfile?.phone,
+    createdAt: existingProfile?.createdAt || new Date().toISOString()
+  };
 
+  await saveUserProfileToFirestore(profile);
   return profile;
 }
 
 export async function signInWithGoogle(role: UserRole = 'seeker'): Promise<UserProfile> {
+  try {
+    localStorage.setItem('hanap_palawan_pending_auth_role', role);
+  } catch {}
+
   const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
   const userCredential = await signInWithPopup(auth, provider);
   const user = userCredential.user;
 
-  let profile = await getUserProfileFromFirestore(user.uid);
-  if (!profile) {
-    profile = {
-      uid: user.uid,
-      email: user.email || '',
-      displayName: user.displayName || 'Palaweño User',
-      role,
-      municipality: 'Puerto Princesa',
-      createdAt: new Date().toISOString()
-    };
-    await saveUserProfileToFirestore(profile);
-  }
+  const existingProfile = await getUserProfileFromFirestore(user.uid);
+  const profile: UserProfile = {
+    ...(existingProfile || {}),
+    uid: user.uid,
+    email: user.email || existingProfile?.email || '',
+    displayName: user.displayName || existingProfile?.displayName || (role === 'employer' ? 'Palawan Employer' : 'Palaweño Seeker'),
+    role,
+    municipality: existingProfile?.municipality || 'Puerto Princesa',
+    companyName: role === 'employer' ? (existingProfile?.companyName || user.displayName || 'Palawan Enterprise') : existingProfile?.companyName,
+    createdAt: existingProfile?.createdAt || new Date().toISOString()
+  };
 
+  await saveUserProfileToFirestore(profile);
   return profile;
 }
 
 export async function logOutUser(): Promise<void> {
+  try {
+    localStorage.removeItem('hanap_palawan_pending_auth_role');
+  } catch {}
   await signOut(auth);
 }

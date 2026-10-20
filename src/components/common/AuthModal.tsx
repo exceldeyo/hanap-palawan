@@ -56,22 +56,16 @@ export const AuthModal: React.FC = () => {
     closeAuthModal, 
     authModalMode, 
     authModalTargetRole,
+    authModalNotice,
     setUserProfile,
     setRole,
+    setSeekerTab,
+    setEmployerTab,
     updateCandidateProfile
   } = useApp();
 
   const [mode, setMode] = useState<'signin' | 'signup'>(authModalMode || 'signin');
   const [selectedRole, setSelectedRole] = useState<UserRole>(authModalTargetRole || 'seeker');
-
-  React.useEffect(() => {
-    if (isAuthModalOpen) {
-      setMode(authModalMode || 'signin');
-      setSelectedRole(authModalTargetRole || 'seeker');
-      setErrorMsg(null);
-      setSuccessMsg(null);
-    }
-  }, [isAuthModalOpen, authModalMode, authModalTargetRole]);
 
   // Form Fields
   const [email, setEmail] = useState('');
@@ -87,22 +81,51 @@ export const AuthModal: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  if (!isAuthModalOpen) return null;
-
   const resetForm = () => {
     setEmail('');
     setPassword('');
     setFullName('');
     setCompanyName('');
+    setMunicipality('Puerto Princesa City');
     setPhone('');
+    setShowPassword(false);
     setErrorMsg(null);
     setSuccessMsg(null);
   };
 
+  React.useEffect(() => {
+    const resolvedRole: UserRole = authModalTargetRole === 'admin' ? 'employer' : (authModalTargetRole || 'seeker');
+    setMode(authModalMode || 'signin');
+    setSelectedRole(resolvedRole);
+    try {
+      localStorage.setItem('hanap_palawan_pending_auth_role', resolvedRole);
+    } catch {
+      // ignore storage errors
+    }
+    resetForm();
+  }, [isAuthModalOpen, authModalMode, authModalTargetRole]);
+
+  if (!isAuthModalOpen) return null;
+
+  const handleClose = () => {
+    resetForm();
+    closeAuthModal();
+  };
+
   const handleModeChange = (newMode: 'signin' | 'signup') => {
     setMode(newMode);
-    setErrorMsg(null);
-    setSuccessMsg(null);
+    resetForm();
+  };
+
+  const handleRoleChange = (newRole: UserRole) => {
+    setSelectedRole(newRole);
+    setRole(newRole);
+    try {
+      localStorage.setItem('hanap_palawan_pending_auth_role', newRole);
+    } catch {
+      // ignore storage errors
+    }
+    resetForm();
   };
 
   const formatAuthError = (error: any): string => {
@@ -169,8 +192,9 @@ export const AuthModal: React.FC = () => {
         );
 
         setUserProfile(profile);
-        setRole(profile.role);
-        if (profile.role === 'seeker') {
+        setRole(selectedRole);
+        if (selectedRole === 'seeker') {
+          setSeekerTab('jobs');
           updateCandidateProfile({
             fullName: profile.displayName,
             email: profile.email,
@@ -187,12 +211,15 @@ export const AuthModal: React.FC = () => {
             resumeFileName: '',
             resumeLastUpdated: new Date().toLocaleDateString()
           });
+        } else {
+          setEmployerTab('pipeline');
         }
 
-        setSuccessMsg(`Mabuhay! Maligayang pagdating sa Hanap Palawan, ${profile.displayName}! Isang karangalan na makasama ka sa ating komunidad.`);
+        setSuccessMsg(`Mabuhay! Maligayang pagdating sa Hanap Palawan, ${profile.displayName}!`);
         setTimeout(() => {
+          resetForm();
           closeAuthModal();
-        }, 1200);
+        }, 900);
       } else {
         const profile = await signInWithEmail(email.trim(), password, selectedRole, {
           companyName: selectedRole === 'employer' ? companyName.trim() : undefined,
@@ -200,15 +227,17 @@ export const AuthModal: React.FC = () => {
           phone: phone.trim()
         });
         if (profile) {
-          setUserProfile(profile);
-          setRole(profile.role);
-          if (profile.role === 'seeker') {
+          const finalProfile = { ...profile, role: selectedRole };
+          setUserProfile(finalProfile);
+          setRole(selectedRole);
+          if (selectedRole === 'seeker') {
+            setSeekerTab('jobs');
             updateCandidateProfile({
-              fullName: profile.displayName,
-              email: profile.email,
-              phone: profile.phone || '',
+              fullName: finalProfile.displayName,
+              email: finalProfile.email,
+              phone: finalProfile.phone || '',
               headline: 'Job Seeker · Palawan',
-              location: profile.municipality ? `${profile.municipality}, Palawan` : 'Palawan',
+              location: finalProfile.municipality ? `${finalProfile.municipality}, Palawan` : 'Palawan',
               summary: '',
               skills: [],
               experience: [],
@@ -219,11 +248,14 @@ export const AuthModal: React.FC = () => {
               resumeFileName: '',
               resumeLastUpdated: new Date().toLocaleDateString()
             });
+          } else {
+            setEmployerTab('pipeline');
           }
-          setSuccessMsg(`Maligayang pagbabalik, ${profile.displayName}!`);
+          setSuccessMsg(`Maligayang pagbabalik bilang ${selectedRole === 'employer' ? 'Employer' : 'Job Seeker'}, ${finalProfile.displayName}!`);
           setTimeout(() => {
+            resetForm();
             closeAuthModal();
-          }, 1000);
+          }, 800);
         }
       }
     } catch (err: any) {
@@ -238,12 +270,19 @@ export const AuthModal: React.FC = () => {
     setLoading(true);
     try {
       const profile = await signInWithGoogle(selectedRole);
-      setUserProfile(profile);
-      setRole(profile.role);
-      setSuccessMsg(`Maligayang pagpasok, ${profile.displayName}!`);
+      const finalProfile = { ...profile, role: selectedRole };
+      setUserProfile(finalProfile);
+      setRole(selectedRole);
+      if (selectedRole === 'employer') {
+        setEmployerTab('pipeline');
+      } else {
+        setSeekerTab('jobs');
+      }
+      setSuccessMsg(`Maligayang pagpasok bilang ${selectedRole === 'employer' ? 'Employer' : 'Job Seeker'}, ${finalProfile.displayName}!`);
       setTimeout(() => {
+        resetForm();
         closeAuthModal();
-      }, 1000);
+      }, 800);
     } catch (err: any) {
       setErrorMsg(formatAuthError(err));
     } finally {
@@ -284,7 +323,7 @@ export const AuthModal: React.FC = () => {
           </div>
           <button
             type="button"
-            onClick={closeAuthModal}
+            onClick={handleClose}
             className="p-1.5 rounded-lg text-emerald-100 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             aria-label="Isara ang modal"
           >
@@ -321,7 +360,17 @@ export const AuthModal: React.FC = () => {
         </div>
 
         {/* Form Body (Scrollable) */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-4">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-4">
+          {authModalNotice && (
+            <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5 animate-in fade-in shadow-2xs">
+              <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="font-extrabold">Kailangan ng Account (Sign Up o Sign In Required)</p>
+                <p className="leading-relaxed font-medium">{authModalNotice}</p>
+              </div>
+            </div>
+          )}
+
           {errorMsg && (
             <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs flex items-start gap-2.5 animate-in fade-in">
               <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
@@ -338,16 +387,25 @@ export const AuthModal: React.FC = () => {
 
           {/* Role Selection for both Sign In and Sign Up */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              Piliin ang inyong uri ng account / papel:
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                1. Piliin ang Account Type ({mode === 'signin' ? 'Login' : 'Sign Up'}):
+              </label>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
+                selectedRole === 'employer'
+                  ? 'bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800'
+                  : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+              }`}>
+                Active: {selectedRole === 'employer' ? 'Employer Portal' : 'Job Seeker Portal'}
+              </span>
+            </div>
             <div className="grid grid-cols-2 gap-2.5">
               <button
                 type="button"
-                onClick={() => setSelectedRole('seeker')}
+                onClick={() => handleRoleChange('seeker')}
                 className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5 ${
                   selectedRole === 'seeker'
-                    ? 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/20'
+                    ? 'border-emerald-500 bg-emerald-50/90 dark:bg-emerald-950/50 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/30 shadow-xs'
                     : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
                 }`}
               >
@@ -369,10 +427,10 @@ export const AuthModal: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => setSelectedRole('employer')}
+                onClick={() => handleRoleChange('employer')}
                 className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5 ${
                   selectedRole === 'employer'
-                    ? 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/20'
+                    ? 'border-teal-500 bg-teal-50/90 dark:bg-teal-950/50 text-teal-950 dark:text-teal-100 ring-2 ring-teal-500/30 shadow-xs'
                     : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
                 }`}
               >
@@ -381,7 +439,7 @@ export const AuthModal: React.FC = () => {
                     <Building2 className="w-3.5 h-3.5" />
                   </div>
                   {selectedRole === 'employer' && (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <CheckCircle2 className="w-4 h-4 text-teal-600 dark:text-teal-400" />
                   )}
                 </div>
                 <div>
@@ -392,9 +450,14 @@ export const AuthModal: React.FC = () => {
                 </div>
               </button>
             </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              {selectedRole === 'employer'
+                ? 'Mag-la-login ka sa Employer Portal (walang role-switching habang naka-login; mag-sign out muna kung lilipat sa Seeker).'
+                : 'Mag-la-login ka sa Job Seeker Portal (walang role-switching habang naka-login; mag-sign out muna kung lilipat sa Employer).'}
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3.5">
+          <form key={`${mode}-${selectedRole}`} onSubmit={handleSubmit} autoComplete="off" className="space-y-3.5">
             {/* Full Name / Contact Person for Sign Up */}
             {mode === 'signup' && (
               <>
@@ -553,12 +616,12 @@ export const AuthModal: React.FC = () => {
                 </>
               ) : mode === 'signin' ? (
                 <>
-                  <span>Mag-sign In sa Hanap Palawan</span>
+                  <span>Mag-sign In bilang {selectedRole === 'employer' ? 'Employer' : 'Job Seeker'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               ) : (
                 <>
-                  <span>Gumawa ng {selectedRole === 'seeker' ? 'Seeker' : 'Employer'} Account</span>
+                  <span>Gumawa ng {selectedRole === 'seeker' ? 'Job Seeker' : 'Employer'} Account</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -584,7 +647,7 @@ export const AuthModal: React.FC = () => {
             onClick={handleGoogleSignIn}
             className="w-full py-2.5 px-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-slate-800 dark:text-slate-200 font-semibold text-xs shadow-2xs transition-all flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50"
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -602,7 +665,7 @@ export const AuthModal: React.FC = () => {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
               />
             </svg>
-            <span>Magpatuloy gamit ang Google</span>
+            <span>Magpatuloy gamit ang Google ({selectedRole === 'employer' ? 'Employer' : 'Job Seeker'})</span>
           </button>
 
           {/* Switch Prompt */}

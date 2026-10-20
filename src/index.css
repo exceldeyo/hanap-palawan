@@ -27,11 +27,26 @@
 
   html, body {
     overflow-x: hidden;
+    max-width: 100vw;
+    background-color: #f8fafc;
+    color: #0f172a;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1), color 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    transition: background-color 350ms cubic-bezier(0.22, 1, 0.36, 1), color 350ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Universal responsive box sizing & media adaptation across all screen devices */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  img, video, canvas, svg {
+    max-width: 100%;
+    height: auto;
   }
 
   /* Hide scrollbars in mobile view while retaining smooth scroll */
@@ -52,7 +67,7 @@
     scroll-behavior: smooth;
   }
 
-  /* Synchronized Surface & Typography Theme Transitions - Zero Lag, Pure Harmony */
+  /* Synchronized Surface & Typography Theme Transitions - Smooth Dark/Light Mode */
   header,
   footer,
   nav,
@@ -60,36 +75,17 @@
   section,
   article,
   aside,
-  .bg-white,
-  .bg-white\/95,
-  .bg-slate-50,
-  .bg-slate-50\/50,
-  .bg-slate-50\/70,
-  .bg-slate-50\/80,
-  .bg-slate-100,
-  .bg-slate-800,
-  .bg-slate-900,
-  .bg-slate-950,
-  .border-slate-100,
-  .border-slate-200,
-  .border-slate-200\/70,
-  .border-slate-200\/80,
-  .border-slate-200\/90,
-  .border-slate-300,
-  .border-slate-700,
-  .border-slate-800,
-  .text-slate-900,
-  .text-slate-800,
-  .text-slate-700,
-  .text-slate-600,
-  .text-slate-500,
-  .text-slate-400,
-  .text-slate-300,
-  .text-slate-200,
-  .text-slate-100 {
-    transition-property: background-color, border-color, color, fill, stroke;
-    transition-duration: 250ms;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  div,
+  button,
+  input,
+  select,
+  textarea,
+  span,
+  p,
+  h1, h2, h3, h4, h5, h6 {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 320ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   html.dark body {

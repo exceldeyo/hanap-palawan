@@ -175,7 +175,7 @@ export interface PalawanNewsItem {
   isFeatured?: boolean;
 }
 
-export type UserRole = 'seeker' | 'employer';
+export type UserRole = 'seeker' | 'employer' | 'admin';
 
 export interface UserProfile {
   uid: string;
@@ -186,4 +186,23 @@ export interface UserProfile {
   companyName?: string;
   phone?: string;
   createdAt: string;
+  companyDescription?: string;
+  industry?: string;
+  website?: string;
+  coverPhotoUrl?: string;
+  avatarUrl?: string;
+  facebookUrl?: string;
+  instagramUrl?: string;
+  linkedinUrl?: string;
+  companySize?: string;
+  birNumber?: string;
+  dtiNumber?: string;
+  birDocumentUrl?: string;
+  dtiDocumentUrl?: string;
+  verificationStatus?: 'unverified' | 'pending' | 'verified' | 'rejected';
+  verificationSubmittedAt?: string;
+  verificationRejectionReason?: string;
+  isVerified?: boolean;
 }
+
+

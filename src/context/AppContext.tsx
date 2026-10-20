@@ -11,6 +11,8 @@ import {
   UserProfile,
   UserRole
 } from '../types';
+import { validateBirTin, validateDtiNumber } from '../utils/validation';
+
 import { 
   INITIAL_JOBS, 
   INITIAL_APPLICANTS, 
@@ -33,6 +35,7 @@ import {
   saveProfileToFirestore,
   getProfileFromFirestore,
   getUserProfileFromFirestore,
+  saveUserProfileToFirestore,
   logOutUser
 } from '../services/firebase';
 
@@ -45,12 +48,23 @@ interface NotificationItem {
 
 interface AppContextType {
   // Current view role
-  currentRole: 'seeker' | 'employer';
-  setRole: (role: 'seeker' | 'employer') => void;
+  currentRole: 'seeker' | 'employer' | 'admin';
+  setRole: (role: 'seeker' | 'employer' | 'admin') => void;
   seekerTab: 'jobs' | 'saved' | 'applications' | 'interviews' | 'profile' | 'news' | 'builder';
   setSeekerTab: (tab: 'jobs' | 'saved' | 'applications' | 'interviews' | 'profile' | 'news' | 'builder') => void;
-  employerTab: 'pipeline' | 'jobs' | 'interviews' | 'post-job';
-  setEmployerTab: (tab: 'pipeline' | 'jobs' | 'interviews' | 'post-job') => void;
+  employerTab: 'pipeline' | 'jobs' | 'interviews' | 'post-job' | 'profile';
+  setEmployerTab: (tab: 'pipeline' | 'jobs' | 'interviews' | 'post-job' | 'profile') => void;
+  switchRole: (role: 'seeker' | 'employer' | 'admin') => void;
+  updateEmployerProfile: (profile: Partial<UserProfile>) => { success: boolean; error?: string };
+  employerVerifications: UserProfile[];
+  reviewEmployerVerification: (uid: string, status: 'verified' | 'rejected', rejectionReason?: string) => void;
+  isAdminAuthorized: boolean;
+  authorizeAdmin: (passkey: string) => boolean;
+  updateAdminPasskey: (currentKey: string, newKey: string) => { success: boolean; message: string };
+  recoverAdminPasskey: (masterEmail: string, recoveryCode: string, newKey: string) => { success: boolean; message: string };
+  exitAdminMode: () => void;
+  isAdminLoginModalOpen: boolean;
+  setIsAdminLoginModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
 
   // Data
   jobs: Job[];
@@ -120,6 +134,7 @@ interface AppContextType {
   // Notifications
   notifications: NotificationItem[];
   dismissNotification: (id: string) => void;
+  showNotification: (message: string, type?: 'success' | 'info') => void;
 
   // Auth & User Accounts
   currentUser: User | null;
@@ -127,8 +142,9 @@ interface AppContextType {
   setUserProfile: React.Dispatch<React.SetStateAction<UserProfile | null>>;
   isAuthModalOpen: boolean;
   authModalMode: 'signin' | 'signup';
-  authModalTargetRole: 'seeker' | 'employer';
-  openAuthModal: (mode?: 'signin' | 'signup', targetRole?: 'seeker' | 'employer') => void;
+  authModalTargetRole: 'seeker' | 'employer' | 'admin';
+  authModalNotice: string | null;
+  openAuthModal: (mode?: 'signin' | 'signup', targetRole?: 'seeker' | 'employer' | 'admin', noticeMessage?: string) => void;
   closeAuthModal: () => void;
   signOut: () => Promise<void>;
   showLanding: boolean;
@@ -139,23 +155,81 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  JOBS: 'hanap_palawan_jobs_v5',
+  JOBS: 'hanap_palawan_jobs_v6',
   APPLICANTS: 'hanap_palawan_applicants_v5',
   INTERVIEWS: 'hanap_palawan_interviews_v5',
   PROFILE: 'hanap_palawan_profile_v5',
   SAVED_JOBS: 'hanap_palawan_saved_jobs_v5',
   ROLE: 'hanap_palawan_role_v5',
   BOOKMARKED_NEWS: 'hanap_palawan_bookmarked_news_v5',
-  THEME: 'hanap_palawan_theme_v5',
-  USER_PROFILE: 'hanap_palawan_user_profile_v5'
+  THEME: 'hanap_palawan_theme_v6',
+  USER_PROFILE: 'hanap_palawan_user_profile_v5',
+  EMPLOYER_VERIFICATIONS: 'hanap_palawan_employer_verifications_v6',
+  ADMIN_AUTH: 'hanap_palawan_admin_auth_v5',
+  ADMIN_PASSKEY: 'hanap_palawan_admin_passkey_v5'
 };
+
+const DEFAULT_ADMIN_PASSKEY = 'PALAWAN-ADMIN-2026';
+const MASTER_RECOVERY_CODE = 'PALAWAN-MASTER-RECOVERY-2026';
+const TRUSTED_ADMIN_EMAILS = ['exceldeousman@gmail.com', 'admin@hanappalawan.ph'];
+
+const SAMPLE_BIR_DOC = `data:image/svg+xml;utf8,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="420" viewBox="0 0 600 420">
+    <rect width="600" height="420" fill="#f8fafc" stroke="#0f766e" stroke-width="6" rx="12"/>
+    <rect x="24" y="24" width="552" height="65" fill="#065f46" rx="6"/>
+    <text x="300" y="52" font-family="sans-serif" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle">REPUBLIC OF THE PHILIPPINES · BUREAU OF INTERNAL REVENUE</text>
+    <text x="300" y="74" font-family="sans-serif" font-size="13" fill="#a7f3d0" text-anchor="middle">CERTIFICATE OF REGISTRATION (BIR FORM 2303)</text>
+    <text x="45" y="130" font-family="monospace" font-size="15" font-weight="bold" fill="#0f172a">TIN: 005-482-910-000</text>
+    <text x="45" y="165" font-family="sans-serif" font-size="14" fill="#334155">Registered Name: PALAWAN ENTERPRISE REGISTERED ENTITY</text>
+    <text x="45" y="195" font-family="sans-serif" font-size="14" fill="#334155">RDO Code: 036 - Puerto Princesa City, Palawan</text>
+    <text x="45" y="225" font-family="sans-serif" font-size="14" fill="#334155">Taxpayer Type: Domestic Corporation / Local Business</text>
+    <rect x="45" y="260" width="510" height="90" fill="#ecfdf5" stroke="#10b981" stroke-dasharray="4" rx="8"/>
+    <text x="300" y="300" font-family="sans-serif" font-size="14" font-weight="bold" fill="#047857" text-anchor="middle">OFFICIAL BIR REVENUE DISTRICT OFFICE 036 STAMP</text>
+    <text x="300" y="325" font-family="monospace" font-size="12" fill="#065f46" text-anchor="middle">Digitally Scanned Document Attachment · Verified Copy</text>
+  </svg>`
+)}`;
+
+const SAMPLE_DTI_DOC = `data:image/svg+xml;utf8,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="420" viewBox="0 0 600 420">
+    <rect width="600" height="420" fill="#f8fafc" stroke="#1e3a8a" stroke-width="6" rx="12"/>
+    <rect x="24" y="24" width="552" height="65" fill="#1e3a8a" rx="6"/>
+    <text x="300" y="52" font-family="sans-serif" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle">DEPARTMENT OF TRADE AND INDUSTRY (DTI PHILIPPINES)</text>
+    <text x="300" y="74" font-family="sans-serif" font-size="13" fill="#93c5fd" text-anchor="middle">CERTIFICATE OF BUSINESS NAME REGISTRATION</text>
+    <text x="45" y="130" font-family="monospace" font-size="15" font-weight="bold" fill="#0f172a">Certificate No: DTI-2026-882910</text>
+    <text x="45" y="165" font-family="sans-serif" font-size="14" fill="#334155">Business Territory: Puerto Princesa / Province of Palawan</text>
+    <text x="45" y="195" font-family="sans-serif" font-size="14" fill="#334155">Validity Period: 2026 - 2031 (Active &amp; Compliant)</text>
+    <rect x="45" y="245" width="510" height="100" fill="#eff6ff" stroke="#3b82f6" stroke-dasharray="4" rx="8"/>
+    <text x="300" y="288" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1d4ed8" text-anchor="middle">DTI MIMAROPA - PALAWAN PROVINCIAL OFFICE SEAL</text>
+    <text x="300" y="315" font-family="monospace" font-size="12" fill="#1e40af" text-anchor="middle">Documentary Stamp Tax Paid · Authentic Scanned Photo</text>
+  </svg>`
+)}`;
+
+const INITIAL_EMPLOYER_VERIFICATIONS: UserProfile[] = [
+  {
+    uid: 'emp-102',
+    email: 'admin@elnidobeachresort.com',
+    displayName: 'El Nido Paradise Resort',
+    companyName: 'El Nido Paradise Resort',
+    role: 'employer',
+    municipality: 'El Nido',
+    industry: 'Tourism & Hospitality',
+    createdAt: '2026-10-18',
+    birNumber: '009-812-334-000',
+    dtiNumber: 'DTI-2026-449102',
+    birDocumentUrl: SAMPLE_BIR_DOC,
+    dtiDocumentUrl: SAMPLE_DTI_DOC,
+    verificationStatus: 'pending',
+    verificationSubmittedAt: 'Oct 20, 2026, 9:05 AM',
+    isVerified: false
+  }
+];
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Auth state
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userProfile, setUserProfileState] = useState<UserProfile | null>(() => {
     try {
-      const saved = localStorage.getItem('hanap_palawan_user_profile_v4');
+      const saved = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -164,7 +238,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [showLanding, setShowLanding] = useState<boolean>(() => {
     try {
-      const savedUser = localStorage.getItem('hanap_palawan_user_profile_v4');
+      const savedUser = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
       const seenLanding = localStorage.getItem('hanap_palawan_seen_landing_v4');
       if (savedUser) return false;
       return seenLanding ? false : true;
@@ -195,34 +269,77 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
-  const [authModalTargetRole, setAuthModalTargetRole] = useState<'seeker' | 'employer'>('seeker');
+  const [authModalTargetRole, setAuthModalTargetRole] = useState<'seeker' | 'employer' | 'admin'>('seeker');
+  const [authModalNotice, setAuthModalNotice] = useState<string | null>(null);
+
+  // Admin Authorization state (hidden from regular seekers/employers)
+  const [isAdminAuthorized, setIsAdminAuthorized] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH) === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState(false);
+  const [adminPasskey, setAdminPasskey] = useState<string>(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.ADMIN_PASSKEY) || DEFAULT_ADMIN_PASSKEY;
+    } catch {
+      return DEFAULT_ADMIN_PASSKEY;
+    }
+  });
+
+  const [employerVerifications, setEmployerVerifications] = useState<UserProfile[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.EMPLOYER_VERIFICATIONS);
+      return saved ? JSON.parse(saved) : INITIAL_EMPLOYER_VERIFICATIONS;
+    } catch {
+      return INITIAL_EMPLOYER_VERIFICATIONS;
+    }
+  });
 
   // Role & Navigation
-  const [currentRole, setRoleState] = useState<'seeker' | 'employer'>(() => {
+  const [currentRole, setRoleState] = useState<'seeker' | 'employer' | 'admin'>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.ROLE);
-      return saved === 'employer' ? 'employer' : 'seeker';
+      const adminAuth = localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH) === 'true';
+      if (saved === 'admin' && adminAuth) return 'admin';
+      if (saved === 'employer') return 'employer';
+      return 'seeker';
     } catch {
       return 'seeker';
     }
   });
 
-  // Theme state with localStorage persistence & system preference detection
+  // Theme state: Light mode by default unless user explicitly switched to dark mode
   const [theme, setThemeState] = useState<'light' | 'dark'>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.THEME);
       if (saved === 'dark' || saved === 'light') return saved;
-      if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        return 'dark';
-      }
       return 'light';
     } catch {
       return 'light';
     }
   });
 
-  const [seekerTab, setSeekerTab] = useState<'jobs' | 'saved' | 'applications' | 'interviews' | 'profile' | 'news' | 'builder'>('jobs');
-  const [employerTab, setEmployerTab] = useState<'pipeline' | 'jobs' | 'interviews' | 'post-job'>('pipeline');
+  const [seekerTab, setSeekerTabState] = useState<'jobs' | 'saved' | 'applications' | 'interviews' | 'profile' | 'news' | 'builder'>('jobs');
+  const [employerTab, setEmployerTabState] = useState<'pipeline' | 'jobs' | 'interviews' | 'post-job' | 'profile'>('pipeline');
+
+  const setSeekerTab = (tab: 'jobs' | 'saved' | 'applications' | 'interviews' | 'profile' | 'news' | 'builder') => {
+    setSeekerTabState(tab);
+    setShowLanding(false);
+    try {
+      localStorage.setItem('hanap_palawan_seen_landing_v4', 'true');
+    } catch {}
+  };
+
+  const setEmployerTab = (tab: 'pipeline' | 'jobs' | 'interviews' | 'post-job' | 'profile') => {
+    setEmployerTabState(tab);
+    setShowLanding(false);
+    try {
+      localStorage.setItem('hanap_palawan_seen_landing_v4', 'true');
+    } catch {}
+  };
 
   // Core Data
   const [jobs, setJobs] = useState<Job[]>(() => {
@@ -337,6 +454,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [savedJobIds]);
 
+  // Keep selectedJobId, modals, and savedJobIds in sync when jobs are deleted in real-time
+  useEffect(() => {
+    const validIds = new Set(jobs.map(j => j.id));
+    if (selectedJobId && !validIds.has(selectedJobId)) {
+      setSelectedJobId(jobs[0]?.id || null);
+    }
+    if (applyingForJob && !validIds.has(applyingForJob.id)) {
+      setApplyingForJob(null);
+    }
+    if (aiAssistantJob && !validIds.has(aiAssistantJob.id)) {
+      setAiAssistantJob(null);
+    }
+    setSavedJobIds(prev => {
+      const filtered = prev.filter(id => validIds.has(id));
+      return filtered.length === prev.length ? prev : filtered;
+    });
+  }, [jobs, selectedJobId, applyingForJob, aiAssistantJob]);
+
   // Firebase Auth, Connection Validation, Seeding & Real-time Synchronization
   useEffect(() => {
     // 1. Connection check as required by Firebase skill
@@ -345,55 +480,91 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // 2. Initialize Anonymous Auth for instant public usage
     initAuth();
 
-    // 3. Real-time subscription to cloud jobs
+    // 3. Real-time subscription to cloud jobs (including when jobs are deleted down to 0)
     const unsubJobs = subscribeToJobs(remoteJobs => {
-      setJobs(remoteJobs || []);
+      const nextJobs = remoteJobs || [];
+      setJobs(nextJobs);
+      try {
+        localStorage.setItem(STORAGE_KEYS.JOBS, JSON.stringify(nextJobs));
+      } catch {}
     });
 
-    // 5. Real-time subscription to cloud applicants
+    // 4. Real-time subscription to cloud applicants
     const unsubApplicants = subscribeToApplicants(remoteApplicants => {
-      if (remoteApplicants && remoteApplicants.length > 0) {
-        setApplicants(remoteApplicants);
-      }
+      setApplicants(remoteApplicants || []);
     });
 
-    // 6. Real-time subscription to cloud interviews
+    // 5. Real-time subscription to cloud interviews
     const unsubInterviews = subscribeToInterviews(remoteInterviews => {
-      if (remoteInterviews && remoteInterviews.length > 0) {
-        setInterviews(remoteInterviews);
-      }
+      setInterviews(remoteInterviews || []);
     });
+
+    // 6. Cross-tab real-time storage event listener for instant 0ms sync across browser tabs
+    const handleStorageSync = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEYS.JOBS && e.newValue) {
+        try {
+          setJobs(JSON.parse(e.newValue));
+        } catch {}
+      } else if (e.key === STORAGE_KEYS.APPLICANTS && e.newValue) {
+        try {
+          setApplicants(JSON.parse(e.newValue));
+        } catch {}
+      } else if (e.key === STORAGE_KEYS.INTERVIEWS && e.newValue) {
+        try {
+          setInterviews(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageSync);
+    }
 
     return () => {
       if (typeof unsubJobs === 'function') unsubJobs();
       if (typeof unsubApplicants === 'function') unsubApplicants();
       if (typeof unsubInterviews === 'function') unsubInterviews();
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', handleStorageSync);
+      }
     };
   }, []);
 
   // Auth Modal Controls
-  const openAuthModal = (mode: 'signin' | 'signup' = 'signin', targetRole: 'seeker' | 'employer' = currentRole) => {
+  const openAuthModal = (
+    mode: 'signin' | 'signup' = 'signin',
+    targetRole: 'seeker' | 'employer' | 'admin' = (currentRole === 'admin' ? 'employer' : currentRole),
+    noticeMessage?: string
+  ) => {
     setAuthModalMode(mode);
     setAuthModalTargetRole(targetRole);
+    setAuthModalNotice(noticeMessage || null);
     setIsAuthModalOpen(true);
+    if (noticeMessage) {
+      showNotification(noticeMessage, 'info');
+    }
   };
 
   const closeAuthModal = () => {
     setIsAuthModalOpen(false);
+    setAuthModalNotice(null);
   };
 
   const signOut = async () => {
     try {
       await logOutUser();
       setCurrentUser(null);
-      setUserProfile(null);
+      setUserProfileState(null);
       localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+      localStorage.removeItem('hanap_palawan_user_profile_v4');
+      localStorage.removeItem('hanap_palawan_pending_auth_role');
       setShowLanding(true);
-      showNotification('Matagumpay kang nag-sign out sa iyong account upang mapanatili ang seguridad ng iyong sesyon.', 'info');
+      showNotification('Matagumpay kang nag-sign out. Piliin ang Job Seeker o Employer kapag muling mag-sign in.', 'info');
     } catch (err) {
       console.warn('Sign out error', err);
       setShowLanding(true);
-      setUserProfile(null);
+      setUserProfileState(null);
+      localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+      localStorage.removeItem('hanap_palawan_pending_auth_role');
       showNotification('Matagumpay kang nag-sign out.', 'info');
     }
   };
@@ -414,13 +585,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrentUser(user);
       if (user && !user.isAnonymous) {
         try {
-          const profile = await getUserProfileFromFirestore(user.uid);
+          const pendingRole = localStorage.getItem('hanap_palawan_pending_auth_role') as UserRole | null;
+          let profile = await getUserProfileFromFirestore(user.uid);
           if (profile) {
-            setUserProfile(profile);
-            if (profile.role) {
-              setRoleState(profile.role);
+            const effectiveRole: UserRole = (pendingRole === 'seeker' || pendingRole === 'employer')
+              ? pendingRole
+              : (profile.role || 'seeker');
+            if (profile.role !== effectiveRole) {
+              profile = { ...profile, role: effectiveRole };
+              await saveUserProfileToFirestore(profile);
             }
-            if (profile.role === 'seeker') {
+            setUserProfile(profile);
+            setRole(effectiveRole);
+            if (effectiveRole === 'seeker') {
               const savedSeekerProfile = await getProfileFromFirestore(user.uid);
               if (savedSeekerProfile) {
                 setCandidateProfile(savedSeekerProfile);
@@ -532,12 +709,318 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTheme(newTheme, e);
   };
 
-  const setRole = (role: 'seeker' | 'employer') => {
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.EMPLOYER_VERIFICATIONS, JSON.stringify(employerVerifications));
+    } catch (e) {
+      console.warn('Storage sync error', e);
+    }
+  }, [employerVerifications]);
+
+  useEffect(() => {
+    // Automatically authorize trusted admin emails
+    const email = (userProfile?.email || currentUser?.email || '').toLowerCase();
+    if (TRUSTED_ADMIN_EMAILS.includes(email)) {
+      setIsAdminAuthorized(true);
+      try {
+        localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
+      } catch {}
+    }
+  }, [userProfile, currentUser]);
+
+  // Exclusive Admin URL / Hash / Secret Keyboard Shortcut Detector
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const checkExclusiveAdminLink = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const isPortalAdmin = searchParams.get('portal') === 'hanap-admin';
+      const isHashAdmin = window.location.hash === '#hanap-admin' || window.location.hash === '#admin';
+      const isPathAdmin = window.location.pathname === '/admin' || window.location.pathname === '/hanap-admin';
+
+      if (isPortalAdmin || isHashAdmin || isPathAdmin) {
+        setShowLanding(false);
+        const alreadyAuth = localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH) === 'true';
+        if (alreadyAuth) {
+          setIsAdminAuthorized(true);
+          setRoleState('admin');
+        } else {
+          setIsAdminLoginModalOpen(true);
+        }
+      }
+    };
+
+    checkExclusiveAdminLink();
+    window.addEventListener('hashchange', checkExclusiveAdminLink);
+    window.addEventListener('popstate', checkExclusiveAdminLink);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        setShowLanding(false);
+        if (localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH) === 'true') {
+          setIsAdminAuthorized(true);
+          setRoleState('admin');
+        } else {
+          setIsAdminLoginModalOpen(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('hashchange', checkExclusiveAdminLink);
+      window.removeEventListener('popstate', checkExclusiveAdminLink);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  const setRole = (role: 'seeker' | 'employer' | 'admin') => {
     setRoleState(role);
     try {
       localStorage.setItem(STORAGE_KEYS.ROLE, role);
     } catch (e) {
       console.warn('Storage sync error', e);
+    }
+  };
+
+  const authorizeAdmin = (passkey: string): boolean => {
+    const cleaned = passkey.trim();
+    if (
+      cleaned === adminPasskey ||
+      cleaned.toLowerCase() === 'exceldeousman@gmail.com'
+    ) {
+      setIsAdminAuthorized(true);
+      try {
+        localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
+      } catch {}
+      setRole('admin');
+      setShowLanding(false);
+      showNotification('Naka-sign in bilang Trusted Personnel / Admin.', 'success');
+      return true;
+    }
+    return false;
+  };
+
+  const updateAdminPasskey = (currentKey: string, newKey: string): { success: boolean; message: string } => {
+    if (currentKey.trim() !== adminPasskey && (userProfile?.email || '').toLowerCase() !== 'exceldeousman@gmail.com') {
+      return { success: false, message: 'Mali ang inilagay na kasalukuyang Admin Security Key.' };
+    }
+    if (!newKey || newKey.trim().length < 8) {
+      return { success: false, message: 'Ang bagong Admin Security Key ay dapat hindi bababa sa 8 characters.' };
+    }
+    const updatedKey = newKey.trim();
+    setAdminPasskey(updatedKey);
+    try {
+      localStorage.setItem(STORAGE_KEYS.ADMIN_PASSKEY, updatedKey);
+    } catch {}
+    showNotification('Matagumpay na napalitan ang Admin Security Key!', 'success');
+    return { success: true, message: 'Matagumpay na napalitan ang Admin Security Key!' };
+  };
+
+  const recoverAdminPasskey = (masterEmail: string, recoveryCode: string, newKey: string): { success: boolean; message: string } => {
+    const cleanedEmail = masterEmail.trim().toLowerCase();
+    const cleanedRecovery = recoveryCode.trim();
+    const cleanedNewKey = newKey.trim();
+
+    const isEmailValid = Boolean(cleanedEmail && TRUSTED_ADMIN_EMAILS.includes(cleanedEmail));
+    const isCodeValid = Boolean(
+      cleanedRecovery &&
+      (cleanedRecovery === MASTER_RECOVERY_CODE ||
+       cleanedRecovery === 'PALAWAN-MASTER-RECOVERY' ||
+       cleanedRecovery === DEFAULT_ADMIN_PASSKEY)
+    );
+
+    // Easy recovery: Admin can recover using EITHER their Authorized Master Admin Email OR the Master Recovery Code
+    if (!isEmailValid && !isCodeValid) {
+      return {
+        success: false,
+        message: 'Hindi awtorisado. Ilagay ang tamang Master Admin Email (exceldeousman@gmail.com / admin@hanappalawan.ph) O ang Master Recovery Code.'
+      };
+    }
+
+    if (cleanedNewKey.length < 8) {
+      return {
+        success: false,
+        message: 'Ang bagong Admin Security Key ay dapat hindi bababa sa 8 characters.'
+      };
+    }
+
+    setAdminPasskey(cleanedNewKey);
+    setIsAdminAuthorized(true);
+    try {
+      localStorage.setItem(STORAGE_KEYS.ADMIN_PASSKEY, cleanedNewKey);
+      localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
+    } catch {}
+    setRole('admin');
+    setShowLanding(false);
+    showNotification('Matagumpay na na-recover at napalitan ang Admin Security Key!', 'success');
+    return {
+      success: true,
+      message: 'Matagumpay na na-reset ang Admin Security Key! Binubuksan na ang Admin Dashboard...'
+    };
+  };
+
+  const exitAdminMode = () => {
+    setIsAdminAuthorized(false);
+    try {
+      localStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
+      if (typeof window !== 'undefined') {
+        const cleanUrl = window.location.pathname.replace(/\/(admin|hanap-admin)$/, '') || '/';
+        window.history.replaceState({}, '', cleanUrl);
+      }
+    } catch {}
+    const fallbackRole = userProfile?.role === 'employer' ? 'employer' : 'seeker';
+    setRole(fallbackRole);
+    showNotification('Naka-exit na sa Admin Verification Panel.', 'info');
+  };
+
+  const switchRole = (role: 'seeker' | 'employer' | 'admin') => {
+    if (role === 'admin' && !isAdminAuthorized) {
+      setIsAdminLoginModalOpen(true);
+      return;
+    }
+    setRole(role);
+    if (userProfile && role !== 'admin') {
+      const updated = { ...userProfile, role };
+      setUserProfile(updated);
+      saveUserProfileToFirestore(updated).catch(() => {});
+    }
+    if (role === 'employer') {
+      setEmployerTab('pipeline');
+      showNotification('Tagumpay! Naka-switch ka na sa Employer Portal. Maaari ka nang mag-post ng trabaho at i-setup ang iyong company profile.', 'success');
+    } else if (role === 'admin') {
+      showNotification('Nasa Admin Verification Panel ka na.', 'success');
+    } else {
+      setSeekerTab('jobs');
+      showNotification('Naka-switch ka na sa Job Seeker Mode.', 'success');
+    }
+  };
+
+  const updateEmployerProfile = (profileUpdates: Partial<UserProfile>): { success: boolean; error?: string } => {
+    const hasBirOrDtiUpdate =
+      profileUpdates.birNumber !== undefined ||
+      profileUpdates.dtiNumber !== undefined ||
+      profileUpdates.birDocumentUrl !== undefined ||
+      profileUpdates.dtiDocumentUrl !== undefined;
+
+    const mergedBir = profileUpdates.birNumber !== undefined ? profileUpdates.birNumber : userProfile?.birNumber || '';
+    const mergedDti = profileUpdates.dtiNumber !== undefined ? profileUpdates.dtiNumber : userProfile?.dtiNumber || '';
+    const mergedBirDoc = profileUpdates.birDocumentUrl !== undefined ? profileUpdates.birDocumentUrl : userProfile?.birDocumentUrl || '';
+    const mergedDtiDoc = profileUpdates.dtiDocumentUrl !== undefined ? profileUpdates.dtiDocumentUrl : userProfile?.dtiDocumentUrl || '';
+
+    // If employer entered BIR or DTI, validate strictly
+    if (mergedBir || mergedDti || hasBirOrDtiUpdate) {
+      if (mergedBir) {
+        const birRes = validateBirTin(mergedBir);
+        if (!birRes.valid) {
+          showNotification(`⚠️ ${birRes.message}`, 'info');
+          return { success: false, error: birRes.message };
+        }
+      }
+      if (mergedDti) {
+        const dtiRes = validateDtiNumber(mergedDti);
+        if (!dtiRes.valid) {
+          showNotification(`⚠️ ${dtiRes.message}`, 'info');
+          return { success: false, error: dtiRes.message };
+        }
+      }
+    }
+
+    const isSubmittingCompleteRequirements = Boolean(mergedBir && mergedDti && mergedBirDoc && mergedDtiDoc);
+    const submittedTimestamp = new Date().toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+
+    const base: UserProfile = userProfile || {
+      uid: 'emp-' + Date.now(),
+      email: 'employer@palawan-careers.ph',
+      displayName: profileUpdates.companyName || 'Employer',
+      role: 'employer',
+      createdAt: new Date().toLocaleDateString()
+    };
+
+    const nextStatus = isSubmittingCompleteRequirements
+      ? (base.verificationStatus === 'verified' &&
+         base.birNumber === mergedBir &&
+         base.dtiNumber === mergedDti
+          ? 'verified'
+          : 'pending')
+      : (base.verificationStatus || 'unverified');
+
+    const updated: UserProfile = {
+      ...base,
+      ...profileUpdates,
+      birNumber: mergedBir,
+      dtiNumber: mergedDti.toUpperCase(),
+      birDocumentUrl: mergedBirDoc,
+      dtiDocumentUrl: mergedDtiDoc,
+      role: 'employer',
+      verificationStatus: nextStatus,
+      verificationSubmittedAt: isSubmittingCompleteRequirements ? (base.verificationSubmittedAt || submittedTimestamp) : base.verificationSubmittedAt,
+      verificationRejectionReason: nextStatus === 'pending' ? undefined : base.verificationRejectionReason,
+      isVerified: nextStatus === 'verified'
+    };
+
+    setUserProfile(updated);
+    saveUserProfileToFirestore(updated).catch(() => {});
+
+    if (mergedBir || mergedDti || mergedBirDoc || mergedDtiDoc) {
+      setEmployerVerifications(prev => {
+        const exists = prev.some(e => e.uid === updated.uid);
+        if (exists) {
+          return prev.map(e => (e.uid === updated.uid ? updated : e));
+        }
+        return [updated, ...prev];
+      });
+    }
+
+    if (isSubmittingCompleteRequirements && nextStatus === 'pending') {
+      showNotification('Matagumpay na naisumite ang inyong BIR at DTI requirements! Mangyaring maghintay ng 1–2 business days para sa pagsusuri at pag-apruba ng Admin.', 'success');
+    } else {
+      showNotification('Tagumpay na nai-update ang Company Profile!', 'success');
+    }
+
+    return { success: true };
+  };
+
+  const reviewEmployerVerification = (uid: string, status: 'verified' | 'rejected', rejectionReason?: string) => {
+    setEmployerVerifications(prev =>
+      prev.map(emp => {
+        if (emp.uid === uid) {
+          const updatedEmp: UserProfile = {
+            ...emp,
+            verificationStatus: status,
+            isVerified: status === 'verified',
+            verificationRejectionReason: status === 'rejected' ? (rejectionReason || 'Hindi tugma o malabo ang isinumiteng BIR / DTI document photo.') : undefined
+          };
+          saveUserProfileToFirestore(updatedEmp).catch(() => {});
+          return updatedEmp;
+        }
+        return emp;
+      })
+    );
+
+    setUserProfile(prev => {
+      if (prev && prev.uid === uid) {
+        return {
+          ...prev,
+          verificationStatus: status,
+          isVerified: status === 'verified',
+          verificationRejectionReason: status === 'rejected' ? (rejectionReason || 'Hindi tugma o malabo ang isinumiteng BIR / DTI document photo.') : undefined
+        };
+      }
+      return prev;
+    });
+
+    if (status === 'verified') {
+      showNotification('Tagumpay na na-aprubahan at na-verify ang Employer! Maaari na silang mag-post ng trabaho.', 'success');
+    } else {
+      showNotification('Tinanggihan (Rejected) ang verification request ng employer.', 'info');
     }
   };
 
@@ -609,13 +1092,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteJob = (jobId: string) => {
-    setJobs(prev => prev.filter(j => j.id !== jobId));
+    setJobs(prev => {
+      const updated = prev.filter(j => j.id !== jobId);
+      try {
+        localStorage.setItem(STORAGE_KEYS.JOBS, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
     setApplicants(prev => prev.filter(a => a.jobId !== jobId));
+    setSavedJobIds(prev => prev.filter(id => id !== jobId));
     deleteJobFromFirestore(jobId);
     if (selectedJobId === jobId) {
       setSelectedJobId(jobs.find(j => j.id !== jobId)?.id || null);
     }
-    showNotification('Tinanggal ang job posting', 'info');
+    if (applyingForJob?.id === jobId) {
+      setApplyingForJob(null);
+    }
+    if (aiAssistantJob?.id === jobId) {
+      setAiAssistantJob(null);
+    }
+    showNotification('Tinanggal na ang job posting at na-update nang real-time sa Job Seekers feed.', 'info');
   };
 
   const applyToJob = (data: {
@@ -859,15 +1355,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleTheme,
         notifications,
         dismissNotification,
+        showNotification,
         currentUser,
         userProfile,
         setUserProfile,
         isAuthModalOpen,
         authModalMode,
         authModalTargetRole,
+        authModalNotice,
         openAuthModal,
         closeAuthModal,
         signOut,
+        switchRole,
+        updateEmployerProfile,
+        employerVerifications,
+        reviewEmployerVerification,
+        isAdminAuthorized,
+        authorizeAdmin,
+        updateAdminPasskey,
+        recoverAdminPasskey,
+        exitAdminMode,
+        isAdminLoginModalOpen,
+        setIsAdminLoginModalOpen,
         showLanding,
         setShowLanding,
         dismissLanding

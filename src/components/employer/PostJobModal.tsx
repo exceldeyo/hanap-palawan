@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { WorkplaceType, JobType, ExperienceLevel, ScreeningQuestion } from '../../types';
 import { generateJobPostingDraft } from '../../services/geminiService';
-import { PlusCircle, Trash2, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
+import { PlusCircle, Trash2, CheckCircle2, ArrowRight, Sparkles, Clock, XCircle } from 'lucide-react';
 
 export const PostJobModal: React.FC = () => {
-  const { addJob, setEmployerTab, userProfile, openAuthModal } = useApp();
+  const { addJob, setEmployerTab, userProfile, openAuthModal, showNotification } = useApp();
 
   const [title, setTitle] = useState('');
   const [company, setCompany] = useState(userProfile?.companyName || 'Palawan Tech Innovation Hub');
@@ -87,6 +87,16 @@ export const PostJobModal: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!userProfile?.birNumber || !userProfile?.dtiNumber || !userProfile?.birDocumentUrl || !userProfile?.dtiDocumentUrl) {
+      showNotification('⚠️ Kailangan muna i-upload ang inyong BIR Form 2303 at DTI/SEC Certificate photos sa Company Profile bago makapag-post ng trabaho.', 'info');
+      setEmployerTab('profile');
+      return;
+    }
+    if (userProfile.verificationStatus !== 'verified' && !userProfile.isVerified) {
+      showNotification('⏳ Kasalukuyan pang nasa Pending Admin Review ang inyong BIR at DTI documents. Makakapag-post kayo sa oras na ma-verify ito ng Admin.', 'info');
+      setEmployerTab('profile');
+      return;
+    }
     setIsSubmitting(true);
 
     const parseLines = (text: string) =>
@@ -180,6 +190,80 @@ export const PostJobModal: React.FC = () => {
               className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer whitespace-nowrap self-start sm:self-auto"
             >
               Gumawa ng Employer Account
+            </button>
+          </div>
+        )}
+
+        {userProfile && (!userProfile.birNumber || !userProfile.dtiNumber || !userProfile.birDocumentUrl || !userProfile.dtiDocumentUrl) && (
+          <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 font-bold text-lg shadow-sm">
+                ⚠️
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-amber-950 dark:text-amber-100">
+                  Kinakailangan ang BIR at DTI Certificate Photos bago Mag-post
+                </h3>
+                <p className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
+                  Upang maiwasan ang job posting spam at maprotektahan ang ating mga Job Seekers sa mga scammer sa Palawan, kailangang i-input ang opisyal na <strong>BIR (TIN)</strong> at <strong>DTI / SEC Registration Number</strong> at mag-upload ng larawan ng inyong mga sertipiko sa Company Profile.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => setEmployerTab('profile')}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>Mag-upload ng BIR & DTI Photos sa Company Profile</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {userProfile && userProfile.birNumber && userProfile.dtiNumber && userProfile.birDocumentUrl && userProfile.dtiDocumentUrl && userProfile.verificationStatus === 'pending' && (
+          <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <h3 className="text-xs font-bold text-amber-950 dark:text-amber-100">
+                  Status ng Requirements: PENDING ADMIN REVIEW
+                </h3>
+                <p className="text-[11px] text-amber-800 dark:text-amber-300">
+                  Naisumite na ang inyong BIR at DTI photos at kasalukuyang sinusuri ng Trusted Admin. Maaari nang mag-publish ng job post sa oras na ma-verify ito.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEmployerTab('profile')}
+              className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shrink-0 cursor-pointer"
+            >
+              Tingnan ang Status
+            </button>
+          </div>
+        )}
+
+        {userProfile && userProfile.verificationStatus === 'rejected' && (
+          <div className="mb-6 p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <XCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <h3 className="text-xs font-bold text-rose-950 dark:text-rose-100">
+                  Status ng Requirements: REJECTED BY ADMIN
+                </h3>
+                <p className="text-[11px] text-rose-800 dark:text-rose-300">
+                  {userProfile.verificationRejectionReason || 'Hindi naaprubahan ang isinumiteng BIR/DTI requirements. Pakisuri at mag-upload muli sa Company Profile.'}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEmployerTab('profile')}
+              className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shrink-0 cursor-pointer"
+            >
+              I-update sa Profile
             </button>
           </div>
         )}
