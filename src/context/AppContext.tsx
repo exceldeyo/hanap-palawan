@@ -345,14 +345,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // 2. Initialize Anonymous Auth for instant public usage
     initAuth();
 
-    // 3. Seed initial jobs and candidate records to Firestore if remote database is empty
-    seedInitialFirestoreData(INITIAL_JOBS, INITIAL_APPLICANTS, INITIAL_INTERVIEWS, INITIAL_CANDIDATE_PROFILE);
-
-    // 4. Real-time subscription to cloud jobs
+    // 3. Real-time subscription to cloud jobs
     const unsubJobs = subscribeToJobs(remoteJobs => {
-      if (remoteJobs && remoteJobs.length > 0) {
-        setJobs(remoteJobs);
-      }
+      setJobs(remoteJobs || []);
     });
 
     // 5. Real-time subscription to cloud applicants

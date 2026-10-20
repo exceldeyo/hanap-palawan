@@ -64,6 +64,15 @@ export const AuthModal: React.FC = () => {
   const [mode, setMode] = useState<'signin' | 'signup'>(authModalMode || 'signin');
   const [selectedRole, setSelectedRole] = useState<UserRole>(authModalTargetRole || 'seeker');
 
+  React.useEffect(() => {
+    if (isAuthModalOpen) {
+      setMode(authModalMode || 'signin');
+      setSelectedRole(authModalTargetRole || 'seeker');
+      setErrorMsg(null);
+      setSuccessMsg(null);
+    }
+  }, [isAuthModalOpen, authModalMode, authModalTargetRole]);
+
   // Form Fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -185,7 +194,11 @@ export const AuthModal: React.FC = () => {
           closeAuthModal();
         }, 1200);
       } else {
-        const profile = await signInWithEmail(email.trim(), password);
+        const profile = await signInWithEmail(email.trim(), password, selectedRole, {
+          companyName: selectedRole === 'employer' ? companyName.trim() : undefined,
+          municipality,
+          phone: phone.trim()
+        });
         if (profile) {
           setUserProfile(profile);
           setRole(profile.role);

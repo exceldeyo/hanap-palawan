@@ -253,20 +253,40 @@ export async function signUpWithEmail(
   return profile;
 }
 
-export async function signInWithEmail(email: string, pass: string): Promise<UserProfile | null> {
-  const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-  const user = userCredential.user;
+export async function signInWithEmail(
+  email: string, 
+  pass: string, 
+  role: UserRole = 'seeker',
+  extra?: { companyName?: string; municipality?: string; phone?: string }
+): Promise<UserProfile> {
+  let user;
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+    user = userCredential.user;
+  } catch (err: any) {
+    if (err?.code === 'auth/user-not-found' || err?.code === 'auth/invalid-credential' || err?.code === 'auth/wrong-password') {
+      try {
+        const newUserCred = await createUserWithEmailAndPassword(auth, email, pass);
+        user = newUserCred.user;
+      } catch (createErr) {
+        throw err;
+      }
+    } else {
+      throw err;
+    }
+  }
+
   let profile = await getUserProfileFromFirestore(user.uid);
-  
-  if (!profile) {
-    // Fallback profile if user doc didn't exist yet
+  if (!profile || profile.role !== role) {
     profile = {
       uid: user.uid,
       email: user.email || email,
-      displayName: user.displayName || email.split('@')[0],
-      role: 'seeker',
-      municipality: 'Puerto Princesa',
-      createdAt: new Date().toISOString()
+      displayName: user.displayName || (role === 'employer' ? extra?.companyName || 'Palawan Enterprise' : 'Palaweño Seeker'),
+      role,
+      municipality: extra?.municipality || profile?.municipality || 'Puerto Princesa',
+      companyName: role === 'employer' ? extra?.companyName || profile?.companyName : undefined,
+      phone: extra?.phone || profile?.phone,
+      createdAt: profile?.createdAt || new Date().toISOString()
     };
     await saveUserProfileToFirestore(profile);
   }

@@ -36,7 +36,7 @@ export const Header: React.FC = () => {
   const employerPendingCount = applicants.filter(a => a.status === 'applied' || a.status === 'reviewing').length;
 
   return (
-    <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-200 shadow-2xs">
+    <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-200 shadow-sm">
       {/* Top Brand & Controls Row */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
@@ -180,23 +180,23 @@ export const Header: React.FC = () => {
           </nav>
 
           {/* Right Action: Auth & Theme (Clean & Spacious for mobile) */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Auth Button or User Profile Badge */}
             {userProfile ? (
               <div className="flex items-center gap-1.5 pl-1 border-l border-slate-200 dark:border-slate-800">
                 <div 
-                  className="flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200/80 dark:border-emerald-800/80 text-xs shadow-2xs"
+                  className="flex items-center gap-1.5 py-1 px-2 sm:px-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200/80 dark:border-emerald-800/80 text-xs shadow-2xs max-w-[120px] sm:max-w-[180px]"
                   title={`${userProfile.displayName} (${userProfile.email})`}
                 >
-                  <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                  <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
                     {userProfile.displayName ? userProfile.displayName.charAt(0).toUpperCase() : 'U'}
                   </div>
-                  <div className="hidden sm:flex flex-col text-left leading-none">
-                    <span className="font-bold text-[11px] text-slate-800 dark:text-slate-100 max-w-[100px] truncate">
+                  <div className="flex flex-col text-left leading-none min-w-0">
+                    <span className="font-bold text-[11px] text-slate-800 dark:text-slate-100 truncate">
                       {userProfile.role === 'employer' && userProfile.companyName ? userProfile.companyName : userProfile.displayName}
                     </span>
-                    <span className="text-[9px] font-semibold text-emerald-700 dark:text-emerald-400 capitalize">
-                      {userProfile.role === 'employer' ? 'Negosyo' : 'Job Seeker'}
+                    <span className="text-[9px] font-semibold text-emerald-700 dark:text-emerald-400 capitalize truncate">
+                      {userProfile.role === 'employer' ? 'Employer' : 'Seeker'}
                     </span>
                   </div>
                 </div>
@@ -204,21 +204,46 @@ export const Header: React.FC = () => {
                   type="button"
                   onClick={signOut}
                   title="Mag-sign out sa account"
-                  className="p-2 text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center border border-transparent hover:border-rose-200 dark:hover:border-rose-800 shadow-2xs shrink-0"
+                  className="p-2 text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl transition-colors cursor-pointer min-h-[38px] min-w-[38px] flex items-center justify-center border border-slate-200 dark:border-slate-800 hover:border-rose-200 dark:hover:border-rose-800 shadow-2xs shrink-0"
                   aria-label="Mag-sign out"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => openAuthModal('signin')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer min-h-[38px] bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg shrink-0"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>Sign In / Sign Up</span>
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* Mobile View: Single Compact Sign In Button */}
+                <button
+                  type="button"
+                  onClick={() => openAuthModal('signin')}
+                  className="flex sm:hidden items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer min-h-[36px] bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs shrink-0 active:scale-95"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Sign In</span>
+                </button>
+
+                {/* Tablet/Desktop View: Dual Seeker / Employer Buttons */}
+                <div className="hidden sm:flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => openAuthModal('signin', 'seeker')}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer min-h-[38px] bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs shrink-0 active:scale-95"
+                    title="Mag-sign in o mag-sign up bilang Job Seeker"
+                  >
+                    <Briefcase className="w-3.5 h-3.5" />
+                    <span>Job Seeker</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openAuthModal('signin', 'employer')}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer min-h-[38px] bg-teal-700 hover:bg-teal-800 text-white shadow-xs shrink-0 border border-teal-500/30 active:scale-95"
+                    title="Mag-sign in o mag-sign up bilang Employer / Negosyo"
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>Employer</span>
+                  </button>
+                </div>
+              </div>
             )}
 
             {/* Global Dark Mode Theme Switcher */}
@@ -240,34 +265,56 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Tablet and Mobile Navigation Bar (< lg): Clean row with full visibility */}
-      <div className="lg:hidden border-t border-slate-200 dark:border-slate-800/80 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-sm transition-colors">
-        <div className="max-w-7xl mx-auto px-3">
-          <nav className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-2.5 text-xs">
+      <div className="lg:hidden border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md transition-colors">
+        <div className="max-w-7xl mx-auto px-2 sm:px-3">
+          <nav className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-2 text-xs touch-pan-x">
             {currentRole === 'seeker' ? (
               <>
                 <button
                   type="button"
                   onClick={() => setSeekerTab('jobs')}
-                  className={`px-3.5 py-2 rounded-xl font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer min-h-[38px] shrink-0 ${
+                  className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer min-h-[36px] shrink-0 ${
                     seekerTab === 'jobs' 
                       ? 'bg-emerald-600 text-white font-bold shadow-2xs' 
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <Briefcase className="w-4 h-4" />
+                  <Briefcase className="w-3.5 h-3.5" />
                   <span>Maghanap</span>
                 </button>
 
                 <button
                   type="button"
+                  onClick={() => setSeekerTab('applications')}
+                  className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer min-h-[36px] shrink-0 ${
+                    seekerTab === 'applications' 
+                      ? 'bg-emerald-600 text-white font-bold shadow-2xs' 
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Applications</span>
+                  {myApplicationsCount > 0 && (
+                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      seekerTab === 'applications' 
+                        ? 'bg-white/25 text-white' 
+                        : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 dark:border dark:border-emerald-800'
+                    }`}>
+                      {myApplicationsCount}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setSeekerTab('profile')}
-                  className={`px-3.5 py-2 rounded-xl font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer min-h-[38px] shrink-0 ${
+                  className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer min-h-[36px] shrink-0 ${
                     seekerTab === 'profile' 
                       ? 'bg-emerald-600 text-white font-bold shadow-2xs' 
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <User className="w-4 h-4" />
+                  <User className="w-3.5 h-3.5" />
                   <span>Profile & CV</span>
                 </button>
               </>
@@ -276,18 +323,18 @@ export const Header: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setEmployerTab('pipeline')}
-                  className={`px-3.5 py-2 rounded-xl font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer min-h-[38px] shrink-0 ${
+                  className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer min-h-[36px] shrink-0 ${
                     employerTab === 'pipeline' 
                       ? 'bg-emerald-600 text-white font-bold shadow-2xs' 
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <Users className="w-4 h-4" />
+                  <Users className="w-3.5 h-3.5" />
                   <span>Pipeline</span>
                   {employerPendingCount > 0 && (
                     <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                       employerTab === 'pipeline' 
-                        ? 'bg-white/25 text-white backdrop-blur-xs' 
+                        ? 'bg-white/25 text-white' 
                         : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 dark:border dark:border-emerald-800'
                     }`}>
                       {employerPendingCount}
@@ -298,39 +345,39 @@ export const Header: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setEmployerTab('jobs')}
-                  className={`px-3.5 py-2 rounded-xl font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer min-h-[38px] shrink-0 ${
+                  className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer min-h-[36px] shrink-0 ${
                     employerTab === 'jobs' 
                       ? 'bg-emerald-600 text-white font-bold shadow-2xs' 
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <Building2 className="w-4 h-4" />
+                  <Building2 className="w-3.5 h-3.5" />
                   <span>Postings</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setEmployerTab('interviews')}
-                  className={`px-3.5 py-2 rounded-xl font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer min-h-[38px] shrink-0 ${
+                  className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer min-h-[36px] shrink-0 ${
                     employerTab === 'interviews' 
                       ? 'bg-emerald-600 text-white font-bold shadow-2xs' 
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <Calendar className="w-4 h-4" />
+                  <Calendar className="w-3.5 h-3.5" />
                   <span>Interviews</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setEmployerTab('post-job')}
-                  className={`px-3.5 py-2 rounded-xl font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer min-h-[38px] shrink-0 ${
+                  className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer min-h-[36px] shrink-0 ${
                     employerTab === 'post-job' 
                       ? 'bg-emerald-600 text-white font-bold shadow-2xs' 
-                      : 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200/80 dark:border-emerald-800/60'
+                      : 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200/80 dark:border-emerald-800/80'
                   }`}
                 >
-                  <PlusCircle className="w-4 h-4" />
+                  <PlusCircle className="w-3.5 h-3.5" />
                   <span>+ Post Job</span>
                 </button>
               </>
