@@ -112,7 +112,8 @@ export const AdminVerificationView: React.FC = () => {
   );
 
   const filteredEmployers = activeVerifications.filter(emp => {
-    const status = emp.verificationStatus || 'pending';
+    const rawStatus = emp.verificationStatus;
+    const status = (rawStatus === 'verified' || rawStatus === 'rejected') ? rawStatus : 'pending';
     const matchesFilter = filter === 'all' || status === filter;
     const matchesSearch =
       (emp.companyName || emp.displayName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -122,7 +123,7 @@ export const AdminVerificationView: React.FC = () => {
     return matchesFilter && matchesSearch;
   });
 
-  const pendingCount = activeVerifications.filter(e => (e.verificationStatus || 'pending') === 'pending').length;
+  const pendingCount = activeVerifications.filter(e => e.verificationStatus !== 'verified' && e.verificationStatus !== 'rejected').length;
   const verifiedCount = activeVerifications.filter(e => e.verificationStatus === 'verified').length;
   const rejectedCount = activeVerifications.filter(e => e.verificationStatus === 'rejected').length;
 

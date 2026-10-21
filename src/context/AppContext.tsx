@@ -219,16 +219,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   });
 
-  const [showLanding, setShowLanding] = useState<boolean>(() => {
-    try {
-      const savedUser = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
-      const seenLanding = localStorage.getItem('hanap_palawan_seen_landing_v4');
-      if (savedUser) return false;
-      return seenLanding ? false : true;
-    } catch {
-      return true;
-    }
-  });
+  const [showLanding, setShowLanding] = useState<boolean>(false);
 
   const dismissLanding = () => {
     setShowLanding(false);
@@ -575,10 +566,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.removeItem('hanap_palawan_user_profile_v4');
       localStorage.removeItem('hanap_palawan_pending_auth_role');
       setShowLanding(true);
+      setRoleState('seeker');
+      setSeekerTabState('jobs');
       showNotification('Matagumpay kang nag-sign out. Piliin ang Job Seeker o Employer kapag muling mag-sign in.', 'info');
     } catch (err) {
       console.warn('Sign out error', err);
       setShowLanding(true);
+      setRoleState('seeker');
+      setSeekerTabState('jobs');
       setUserProfileState(null);
       localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
       localStorage.removeItem('hanap_palawan_pending_auth_role');
@@ -944,7 +939,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    const isSubmittingCompleteRequirements = Boolean(mergedBir && mergedDti && mergedBirDoc && mergedDtiDoc);
+    const hasAnySubmission = Boolean(mergedBir || mergedDti || mergedBirDoc || mergedDtiDoc);
     const submittedTimestamp = new Date().toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -961,13 +956,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: new Date().toLocaleDateString()
     };
 
-    const nextStatus = isSubmittingCompleteRequirements
-      ? (base.verificationStatus === 'verified' &&
-         base.birNumber === mergedBir &&
-         base.dtiNumber === mergedDti
-          ? 'verified'
-          : 'pending')
-      : (base.verificationStatus || 'unverified');
+    const nextStatus = (base.verificationStatus === 'verified' && base.birNumber === mergedBir && base.dtiNumber === mergedDti)
+      ? 'verified'
+      : (hasAnySubmission ? 'pending' : (base.verificationStatus || 'pending'));
 
     const updated: UserProfile = {
       ...base,
@@ -978,7 +969,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       dtiDocumentUrl: mergedDtiDoc,
       role: 'employer',
       verificationStatus: nextStatus,
-      verificationSubmittedAt: isSubmittingCompleteRequirements ? (base.verificationSubmittedAt || submittedTimestamp) : base.verificationSubmittedAt,
+      verificationSubmittedAt: hasAnySubmission ? (base.verificationSubmittedAt || submittedTimestamp) : base.verificationSubmittedAt,
       verificationRejectionReason: nextStatus === 'pending' ? undefined : base.verificationRejectionReason,
       isVerified: nextStatus === 'verified'
     };
@@ -998,7 +989,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return nextList;
     });
 
-    if (isSubmittingCompleteRequirements && nextStatus === 'pending') {
+    if (hasAnySubmission && nextStatus === 'pending') {
       showNotification('Matagumpay na naisumite ang inyong BIR at DTI requirements! Mangyaring maghintay ng 1–2 business days para sa pagsusuri at pag-apruba ng Admin.', 'success');
     } else {
       showNotification('Tagumpay na nai-update ang Company Profile!', 'success');
