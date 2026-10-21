@@ -10,10 +10,8 @@ import {
   MapPin, 
   UserPlus,
   LogIn,
-  Users,
-  Film
+  Users
 } from 'lucide-react';
-import { AppVideoAdPlayer } from './AppVideoAdPlayer';
 
 export const LandingPageView: React.FC = () => {
   const { openAuthModal, dismissLanding, setSeekerTab, setEmployerTab, setRole, userProfile } = useApp();
@@ -165,26 +163,6 @@ export const LandingPageView: React.FC = () => {
               {userProfile?.role === 'employer' ? 'Buksan ang Employer Portal' : 'Mag-Sign Up / Sign In bilang Employer'} <ArrowRight className="w-3.5 h-3.5" />
             </span>
           </button>
-        </div>
-
-        {/* Interactive Video App Advertisement & Step-by-Step How-To-Use Showcase */}
-        <div className="p-5 sm:p-10 lg:p-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-            <div className="space-y-1">
-              <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                <Film className="w-4 h-4" />
-                <span>Official Video Advertisement & Tutorial Guide</span>
-              </div>
-              <h2 className="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                Panoorin: Paano Gamitin ang Hanap Palawan
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                May kasamang Tropical Background Music, Sound Effects, at Step-by-Step Animations para sa Job Seekers at Employers.
-              </p>
-            </div>
-          </div>
-
-          <AppVideoAdPlayer />
         </div>
 
         {/* Action Buttons Zone */}

@@ -201,6 +201,33 @@ export function subscribeToInterviews(onUpdate: (interviews: Interview[]) => voi
   });
 }
 
+export function subscribeToEmployerVerifications(onUpdate: (employers: UserProfile[]) => void) {
+  return onSnapshot(collection(db, COLLECTIONS.USERS), snapshot => {
+    const items: UserProfile[] = [];
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data() as UserProfile;
+      if (
+        data.role === 'employer' ||
+        data.birNumber ||
+        data.dtiNumber ||
+        data.birDocumentUrl ||
+        data.dtiDocumentUrl ||
+        data.verificationStatus
+      ) {
+        if (data.companyName !== 'El Nido Paradise Resort' && data.uid !== 'emp-102') {
+          items.push({
+            ...data,
+            uid: data.uid || docSnap.id
+          });
+        }
+      }
+    });
+    onUpdate(items);
+  }, err => {
+    console.warn('[Firebase] Employer verifications listener error:', err);
+  });
+}
+
 // Cloud persistence mutation helpers
 export async function saveJobToFirestore(job: Job) {
   try {

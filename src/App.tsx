@@ -22,15 +22,13 @@ import { LiveInterviewRoomModal } from './components/employer/LiveInterviewRoomM
 import { SiteTransparencyModal, TransparencyTab } from './components/common/SiteTransparencyModal';
 import { AuthModal } from './components/common/AuthModal';
 import { LandingPageView } from './components/common/LandingPageView';
-import { AppVideoAdPlayer } from './components/common/AppVideoAdPlayer';
 import { BackToTop } from './components/common/BackToTop';
 import { JobAlertSignup } from './components/common/JobAlertSignup';
 import { AdminVerificationView } from './components/admin/AdminVerificationView';
-import { CheckCircle2, Info, X, Palmtree, Sparkles, Heart, ShieldCheck, HelpCircle, Lock, Film } from 'lucide-react';
+import { CheckCircle2, Info, X, Palmtree, Sparkles, Heart, ShieldCheck, HelpCircle, Lock } from 'lucide-react';
 
 const AppShell: React.FC = () => {
   const [transparencyTab, setTransparencyTab] = useState<TransparencyTab | null>(null);
-  const [isVideoAdModalOpen, setIsVideoAdModalOpen] = useState(false);
   const [adminPasskeyInput, setAdminPasskeyInput] = useState('');
   const [adminPasskeyError, setAdminPasskeyError] = useState<string | null>(null);
   const [isRecoveringAdminKey, setIsRecoveringAdminKey] = useState(false);
@@ -132,13 +130,6 @@ const AppShell: React.FC = () => {
           initialTab={transparencyTab} 
           onClose={() => setTransparencyTab(null)} 
         />
-      )}
-      {isVideoAdModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
-          <div className="max-w-4xl w-full">
-            <AppVideoAdPlayer isModal onCloseModal={() => setIsVideoAdModalOpen(false)} />
-          </div>
-        </div>
       )}
       <AuthModal />
 
@@ -425,15 +416,6 @@ const AppShell: React.FC = () => {
                   >
                     <HelpCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>Help Center</span>
-                  </button>
-                  <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
-                  <button
-                    type="button"
-                    onClick={() => setIsVideoAdModalOpen(true)}
-                    className="text-emerald-700 dark:text-emerald-400 hover:underline transition-colors cursor-pointer inline-flex items-center gap-1.5 font-bold py-1"
-                  >
-                    <Film className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                    <span>Watch Video Ad & App Guide</span>
                   </button>
                 </div>
               </div>

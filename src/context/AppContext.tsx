@@ -28,6 +28,7 @@ import {
   subscribeToJobs,
   subscribeToApplicants,
   subscribeToInterviews,
+  subscribeToEmployerVerifications,
   saveJobToFirestore,
   deleteJobFromFirestore,
   saveApplicantToFirestore,
@@ -204,25 +205,7 @@ const SAMPLE_DTI_DOC = `data:image/svg+xml;utf8,${encodeURIComponent(
   </svg>`
 )}`;
 
-const INITIAL_EMPLOYER_VERIFICATIONS: UserProfile[] = [
-  {
-    uid: 'emp-102',
-    email: 'admin@elnidobeachresort.com',
-    displayName: 'El Nido Paradise Resort',
-    companyName: 'El Nido Paradise Resort',
-    role: 'employer',
-    municipality: 'El Nido',
-    industry: 'Tourism & Hospitality',
-    createdAt: '2026-10-18',
-    birNumber: '009-812-334-000',
-    dtiNumber: 'DTI-2026-449102',
-    birDocumentUrl: SAMPLE_BIR_DOC,
-    dtiDocumentUrl: SAMPLE_DTI_DOC,
-    verificationStatus: 'pending',
-    verificationSubmittedAt: 'Oct 20, 2026, 9:05 AM',
-    isVerified: false
-  }
-];
+const INITIAL_EMPLOYER_VERIFICATIONS: UserProfile[] = [];
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Auth state
@@ -292,7 +275,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [employerVerifications, setEmployerVerifications] = useState<UserProfile[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.EMPLOYER_VERIFICATIONS);
-      return saved ? JSON.parse(saved) : INITIAL_EMPLOYER_VERIFICATIONS;
+      if (saved) {
+        const parsed: UserProfile[] = JSON.parse(saved);
+        return parsed.filter(e => e.uid !== 'emp-102' && e.companyName !== 'El Nido Paradise Resort');
+      }
+      return INITIAL_EMPLOYER_VERIFICATIONS;
     } catch {
       return INITIAL_EMPLOYER_VERIFICATIONS;
     }
@@ -499,7 +486,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setInterviews(remoteInterviews || []);
     });
 
-    // 6. Cross-tab real-time storage event listener for instant 0ms sync across browser tabs
+    // 6. Real-time subscription to cloud employer verifications (submitted BIR/DTI requirements)
+    const unsubVerifications = subscribeToEmployerVerifications(remoteEmployers => {
+      if (remoteEmployers) {
+        setEmployerVerifications(prev => {
+          const map = new Map<string, UserProfile>();
+          prev.forEach(item => {
+            if (item.uid !== 'emp-102' && item.companyName !== 'El Nido Paradise Resort') {
+              map.set(item.uid, item);
+            }
+          });
+          remoteEmployers.forEach(item => {
+            if (item.uid !== 'emp-102' && item.companyName !== 'El Nido Paradise Resort') {
+              map.set(item.uid, { ...(map.get(item.uid) || {}), ...item });
+            }
+          });
+          const merged = Array.from(map.values());
+          try {
+            localStorage.setItem(STORAGE_KEYS.EMPLOYER_VERIFICATIONS, JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
+      }
+    });
+
+    // 7. Cross-tab real-time storage event listener for instant 0ms sync across browser tabs
     const handleStorageSync = (e: StorageEvent) => {
       if (e.key === STORAGE_KEYS.JOBS && e.newValue) {
         try {
@@ -513,6 +524,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         try {
           setInterviews(JSON.parse(e.newValue));
         } catch {}
+      } else if (e.key === STORAGE_KEYS.EMPLOYER_VERIFICATIONS && e.newValue) {
+        try {
+          const parsed: UserProfile[] = JSON.parse(e.newValue);
+          setEmployerVerifications(parsed.filter(item => item.uid !== 'emp-102' && item.companyName !== 'El Nido Paradise Resort'));
+        } catch {}
       }
     };
     if (typeof window !== 'undefined') {
@@ -523,6 +539,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (typeof unsubJobs === 'function') unsubJobs();
       if (typeof unsubApplicants === 'function') unsubApplicants();
       if (typeof unsubInterviews === 'function') unsubInterviews();
+      if (typeof unsubVerifications === 'function') unsubVerifications();
       if (typeof window !== 'undefined') {
         window.removeEventListener('storage', handleStorageSync);
       }
@@ -969,15 +986,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUserProfile(updated);
     saveUserProfileToFirestore(updated).catch(() => {});
 
-    if (mergedBir || mergedDti || mergedBirDoc || mergedDtiDoc) {
-      setEmployerVerifications(prev => {
-        const exists = prev.some(e => e.uid === updated.uid);
-        if (exists) {
-          return prev.map(e => (e.uid === updated.uid ? updated : e));
-        }
-        return [updated, ...prev];
-      });
-    }
+    setEmployerVerifications(prev => {
+      const filteredPrev = prev.filter(e => e.uid !== 'emp-102' && e.companyName !== 'El Nido Paradise Resort');
+      const exists = filteredPrev.some(e => e.uid === updated.uid);
+      const nextList = exists
+        ? filteredPrev.map(e => (e.uid === updated.uid ? updated : e))
+        : [updated, ...filteredPrev];
+      try {
+        localStorage.setItem(STORAGE_KEYS.EMPLOYER_VERIFICATIONS, JSON.stringify(nextList));
+      } catch {}
+      return nextList;
+    });
 
     if (isSubmittingCompleteRequirements && nextStatus === 'pending') {
       showNotification('Matagumpay na naisumite ang inyong BIR at DTI requirements! Mangyaring maghintay ng 1–2 business days para sa pagsusuri at pag-apruba ng Admin.', 'success');
@@ -989,21 +1008,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const reviewEmployerVerification = (uid: string, status: 'verified' | 'rejected', rejectionReason?: string) => {
-    setEmployerVerifications(prev =>
-      prev.map(emp => {
-        if (emp.uid === uid) {
-          const updatedEmp: UserProfile = {
-            ...emp,
-            verificationStatus: status,
-            isVerified: status === 'verified',
-            verificationRejectionReason: status === 'rejected' ? (rejectionReason || 'Hindi tugma o malabo ang isinumiteng BIR / DTI document photo.') : undefined
-          };
-          saveUserProfileToFirestore(updatedEmp).catch(() => {});
-          return updatedEmp;
-        }
-        return emp;
-      })
-    );
+    setEmployerVerifications(prev => {
+      const nextList = prev
+        .filter(emp => emp.uid !== 'emp-102' && emp.companyName !== 'El Nido Paradise Resort')
+        .map(emp => {
+          if (emp.uid === uid) {
+            const updatedEmp: UserProfile = {
+              ...emp,
+              verificationStatus: status,
+              isVerified: status === 'verified',
+              verificationRejectionReason: status === 'rejected' ? (rejectionReason || 'Hindi tugma o malabo ang isinumiteng BIR / DTI document photo.') : undefined
+            };
+            saveUserProfileToFirestore(updatedEmp).catch(() => {});
+            return updatedEmp;
+          }
+          return emp;
+        });
+      try {
+        localStorage.setItem(STORAGE_KEYS.EMPLOYER_VERIFICATIONS, JSON.stringify(nextList));
+      } catch {}
+      return nextList;
+    });
 
     setUserProfile(prev => {
       if (prev && prev.uid === uid) {

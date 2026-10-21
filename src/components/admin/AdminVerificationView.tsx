@@ -107,7 +107,11 @@ export const AdminVerificationView: React.FC = () => {
     }
   };
 
-  const filteredEmployers = employerVerifications.filter(emp => {
+  const activeVerifications = employerVerifications.filter(
+    e => e.uid !== 'emp-102' && e.companyName !== 'El Nido Paradise Resort'
+  );
+
+  const filteredEmployers = activeVerifications.filter(emp => {
     const status = emp.verificationStatus || 'pending';
     const matchesFilter = filter === 'all' || status === filter;
     const matchesSearch =
@@ -118,9 +122,9 @@ export const AdminVerificationView: React.FC = () => {
     return matchesFilter && matchesSearch;
   });
 
-  const pendingCount = employerVerifications.filter(e => (e.verificationStatus || 'pending') === 'pending').length;
-  const verifiedCount = employerVerifications.filter(e => e.verificationStatus === 'verified').length;
-  const rejectedCount = employerVerifications.filter(e => e.verificationStatus === 'rejected').length;
+  const pendingCount = activeVerifications.filter(e => (e.verificationStatus || 'pending') === 'pending').length;
+  const verifiedCount = activeVerifications.filter(e => e.verificationStatus === 'verified').length;
+  const rejectedCount = activeVerifications.filter(e => e.verificationStatus === 'rejected').length;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in duration-200">
@@ -283,7 +287,7 @@ export const AdminVerificationView: React.FC = () => {
             </span>
             <UserCheck className={`w-4 h-4 ${filter === 'all' ? 'text-emerald-400 dark:text-emerald-600' : 'text-slate-400'}`} />
           </div>
-          <div className="text-2xl font-black mt-1">{employerVerifications.length}</div>
+          <div className="text-2xl font-black mt-1">{activeVerifications.length}</div>
           <div className={`text-[11px] font-semibold mt-0.5 ${filter === 'all' ? 'text-emerald-300 dark:text-emerald-700' : 'text-slate-500'}`}>
             All Registered Companies
           </div>
@@ -565,7 +569,7 @@ export const AdminVerificationView: React.FC = () => {
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
             }`}
           >
-            Lahat ({employerVerifications.length})
+            Lahat ({activeVerifications.length})
           </button>
         </div>
 
