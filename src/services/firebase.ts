@@ -228,10 +228,28 @@ export function subscribeToEmployerVerifications(onUpdate: (employers: UserProfi
   });
 }
 
+// Utility to remove undefined values before writing to Firestore (prevents setDoc crash)
+export function sanitizeForFirestore<T extends Record<string, any>>(obj: T): Record<string, any> {
+  if (!obj || typeof obj !== 'object') return obj;
+  const sanitized: Record<string, any> = {};
+  Object.keys(obj).forEach(key => {
+    const val = obj[key];
+    if (val !== undefined) {
+      if (val && typeof val === 'object' && !Array.isArray(val) && !(val instanceof Date)) {
+        sanitized[key] = sanitizeForFirestore(val);
+      } else {
+        sanitized[key] = val;
+      }
+    }
+  });
+  return sanitized;
+}
+
 // Cloud persistence mutation helpers
 export async function saveJobToFirestore(job: Job) {
   try {
-    await setDoc(doc(db, COLLECTIONS.JOBS, job.id), job);
+    const sanitized = sanitizeForFirestore(job);
+    await setDoc(doc(db, COLLECTIONS.JOBS, job.id), sanitized);
   } catch (err) {
     console.warn('[Firebase] saveJob error:', err);
   }
@@ -259,7 +277,8 @@ export async function deleteJobFromFirestore(jobId: string) {
 
 export async function saveApplicantToFirestore(applicant: Applicant) {
   try {
-    await setDoc(doc(db, COLLECTIONS.APPLICANTS, applicant.id), applicant);
+    const sanitized = sanitizeForFirestore(applicant);
+    await setDoc(doc(db, COLLECTIONS.APPLICANTS, applicant.id), sanitized);
   } catch (err) {
     console.warn('[Firebase] saveApplicant error:', err);
   }
@@ -267,7 +286,8 @@ export async function saveApplicantToFirestore(applicant: Applicant) {
 
 export async function saveInterviewToFirestore(interview: Interview) {
   try {
-    await setDoc(doc(db, COLLECTIONS.INTERVIEWS, interview.id), interview);
+    const sanitized = sanitizeForFirestore(interview);
+    await setDoc(doc(db, COLLECTIONS.INTERVIEWS, interview.id), sanitized);
   } catch (err) {
     console.warn('[Firebase] saveInterview error:', err);
   }
@@ -275,7 +295,8 @@ export async function saveInterviewToFirestore(interview: Interview) {
 
 export async function saveProfileToFirestore(profile: CandidateProfile, uid: string = 'default-seeker') {
   try {
-    await setDoc(doc(db, COLLECTIONS.PROFILES, uid), profile);
+    const sanitized = sanitizeForFirestore(profile);
+    await setDoc(doc(db, COLLECTIONS.PROFILES, uid), sanitized);
   } catch (err) {
     console.warn('[Firebase] saveProfile error:', err);
   }
@@ -311,10 +332,11 @@ export async function getUserProfileFromFirestore(uid: string): Promise<UserProf
 
 export async function saveUserProfileToFirestore(profile: UserProfile): Promise<void> {
   try {
-    await setDoc(doc(db, COLLECTIONS.USERS, profile.uid), profile, { merge: true });
+    const sanitized = sanitizeForFirestore(profile);
+    await setDoc(doc(db, COLLECTIONS.USERS, profile.uid), sanitized, { merge: true });
+    console.log('[Firebase] User profile saved successfully to Firestore:', profile.uid);
   } catch (err) {
     console.warn('[Firebase] saveUserProfile error:', err);
-    throw err;
   }
 }
 

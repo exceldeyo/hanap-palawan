@@ -482,14 +482,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (remoteEmployers) {
         setEmployerVerifications(prev => {
           const map = new Map<string, UserProfile>();
-          prev.forEach(item => {
+          // Remote employers from Firestore take priority
+          remoteEmployers.forEach(item => {
             if (item.uid !== 'emp-102' && item.companyName !== 'El Nido Paradise Resort') {
               map.set(item.uid, item);
             }
           });
-          remoteEmployers.forEach(item => {
-            if (item.uid !== 'emp-102' && item.companyName !== 'El Nido Paradise Resort') {
-              map.set(item.uid, { ...(map.get(item.uid) || {}), ...item });
+          // Retain local items only if not yet present in remote
+          prev.forEach(item => {
+            if (item.uid !== 'emp-102' && item.companyName !== 'El Nido Paradise Resort' && !map.has(item.uid)) {
+              map.set(item.uid, item);
             }
           });
           const merged = Array.from(map.values());
