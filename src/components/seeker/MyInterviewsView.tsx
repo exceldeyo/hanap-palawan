@@ -8,20 +8,28 @@ import {
   UserCheck, 
   ArrowRight, 
   CheckCircle2, 
-  Phone 
+  Phone,
+  Briefcase
 } from 'lucide-react';
 
 export const MyInterviewsView: React.FC = () => {
-  const { interviews, candidateProfile, setActiveInterviewRoom, setSeekerTab } = useApp();
+  const { interviews, candidateProfile, userProfile, setActiveInterviewRoom, setSeekerTab } = useApp();
 
-  const myInterviews = interviews.filter(i => i.applicantEmail === candidateProfile.email);
+  const userEmail = userProfile?.email || candidateProfile.email;
+  const myInterviews = interviews.filter(i => i.applicantEmail === userEmail);
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 animate-in fade-in duration-200">
+      {/* Header Banner */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-7 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-900">Nai-schedule na mga Interview</h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <div className="flex items-center gap-2 mb-1">
+            <Calendar className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              Nai-schedule na mga Interview
+            </h2>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
             Makisalamuha sa mga employers sa Palawan sa pamamagitan ng virtual video meeting o on-site interview room.
           </p>
         </div>
@@ -29,18 +37,19 @@ export const MyInterviewsView: React.FC = () => {
         <button
           type="button"
           onClick={() => setSeekerTab('jobs')}
-          className="w-full sm:w-auto px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer flex items-center justify-center min-h-[40px]"
+          className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2 shrink-0"
         >
-          Mag-explore ng Trabaho
+          <Briefcase className="w-4 h-4" />
+          <span>Mag-explore ng Trabaho</span>
         </button>
       </div>
 
       {myInterviews.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-12 text-center space-y-3">
-          <Calendar className="w-10 h-10 text-slate-300 mx-auto" />
-          <h3 className="text-base font-semibold text-slate-800">Wala pang nakatakdang interview</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Kapag nagustuhan ng employer ang iyong profile at screening answers, makakatanggap ka ng direct invitation para sa video screen dito.
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center space-y-3 shadow-2xs">
+          <Calendar className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
+          <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200">Wala pang nakatakdang interview</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+            Kapag nagustuhan ng employer ang iyong profile at screening answers, makakatanggap ka ng direct invitation para sa video meeting dito.
           </p>
         </div>
       ) : (
@@ -48,42 +57,44 @@ export const MyInterviewsView: React.FC = () => {
           {myInterviews.map(interview => (
             <div
               key={interview.id}
-              className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-xs space-y-4 sm:space-y-5 hover:border-slate-300 transition-all"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4 hover:border-emerald-500/40 transition-all"
             >
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
                       <Building2 className="w-3.5 h-3.5" />
                       <span>{interview.company}</span>
                     </span>
-                    <span className="text-slate-300">·</span>
-                    <span className="text-xs text-slate-500">{interview.stage}</span>
+                    <span className="text-slate-300 dark:text-slate-700">·</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">{interview.stage}</span>
                   </div>
 
-                  <h3 className="text-lg font-bold text-slate-900">
+                  <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
                     {interview.jobTitle}
                   </h3>
 
-                  <div className="text-xs text-slate-600 mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
-                    <span className="flex items-center gap-1 font-semibold text-slate-800">
+                  <div className="text-xs text-slate-600 dark:text-slate-300 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-medium">
+                    <span className="flex items-center gap-1 font-extrabold text-slate-900 dark:text-white">
                       <Calendar className="w-3.5 h-3.5 text-emerald-600" />
                       <span>{interview.date} ({interview.time})</span>
                     </span>
+                    <span className="text-slate-300 dark:text-slate-700">·</span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5 text-slate-400" />
                       <span>{interview.durationMinutes} mins</span>
                     </span>
+                    <span className="text-slate-300 dark:text-slate-700">·</span>
                     <span className="flex items-center gap-1 capitalize">
-                      {interview.format === 'video' ? <Video className="w-3.5 h-3.5 text-blue-600" /> : <Phone className="w-3.5 h-3.5 text-amber-600" />}
+                      {interview.format === 'video' ? <Video className="w-3.5 h-3.5 text-emerald-600" /> : <Phone className="w-3.5 h-3.5 text-amber-600" />}
                       <span>{interview.format} Interview</span>
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
                   {interview.status === 'completed' ? (
-                    <span className="px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full text-xs font-bold flex items-center gap-1">
+                    <span className="px-3 py-1.5 bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-bold flex items-center gap-1">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Natapos Na</span>
                     </span>
@@ -91,38 +102,38 @@ export const MyInterviewsView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setActiveInterviewRoom(interview)}
-                      className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer min-h-[42px]"
+                      className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer min-h-[42px]"
                     >
                       <Video className="w-4 h-4" />
                       <span>Pumasok sa Virtual Video Room</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <ArrowRight className="w-4 h-4" />
                     </button>
                   )}
                 </div>
               </div>
 
-              {/* Interviewer details */}
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0">
+              {/* Interviewer Details */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-900 to-emerald-950 text-emerald-300 font-bold flex items-center justify-center text-sm shrink-0 border border-slate-700">
                     {interview.interviewerName.charAt(0)}
                   </div>
                   <div>
-                    <div className="font-bold text-slate-900">{interview.interviewerName}</div>
-                    <div className="text-[11px] text-slate-500">{interview.interviewerRole}</div>
+                    <div className="font-extrabold text-slate-900 dark:text-white">{interview.interviewerName}</div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">{interview.interviewerRole}</div>
                   </div>
                 </div>
 
-                <div className="text-left sm:text-right text-[11px] text-slate-500">
-                  <span className="block font-medium text-slate-700">{interview.locationOrDetails}</span>
+                <div className="text-left sm:text-right text-[11px] text-slate-500 dark:text-slate-400">
+                  <span className="block font-semibold text-slate-800 dark:text-slate-200">{interview.locationOrDetails}</span>
                 </div>
               </div>
 
               {/* Agenda / Notes */}
               {interview.notesOrAgenda && (
-                <div className="space-y-1 text-xs">
-                  <span className="font-bold text-slate-800 block">Agenda at Gabay sa Pag-uusap:</span>
-                  <p className="text-slate-600 whitespace-pre-line leading-relaxed bg-white p-3 rounded-lg border border-slate-100">
+                <div className="space-y-1.5 text-xs">
+                  <span className="font-extrabold text-slate-900 dark:text-white block">Agenda at Gabay sa Pag-uusap:</span>
+                  <p className="text-slate-600 dark:text-slate-300 whitespace-pre-line leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800">
                     {interview.notesOrAgenda}
                   </p>
                 </div>
