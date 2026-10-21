@@ -12,7 +12,12 @@ import {
   Building2, 
   FileText, 
   PlusCircle, 
-  Sparkles 
+  Sparkles,
+  MapPin,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Briefcase
 } from 'lucide-react';
 
 export const EmployerDashboard: React.FC = () => {
@@ -44,31 +49,31 @@ export const EmployerDashboard: React.FC = () => {
     switch (status) {
       case 'interview_scheduled':
         return (
-          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 border border-amber-300 dark:border-amber-800">
             Interview Scheduled
           </span>
         );
       case 'reviewing':
         return (
-          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-300">
+          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200 border border-blue-300 dark:border-blue-800">
             In Review
           </span>
         );
       case 'offered':
         return (
-          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800">
             Offer Extended
           </span>
         );
       case 'rejected':
         return (
-          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300">
+          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200 border border-rose-300 dark:border-rose-800">
             Declined
           </span>
         );
       default:
         return (
-          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800">
             Applied
           </span>
         );
@@ -76,22 +81,22 @@ export const EmployerDashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 animate-in fade-in duration-200">
+      {/* Top Header Banner */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-7 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
               Employer Hiring Portal
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold shrink-0">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold shrink-0">
               Palawan Talent Pool
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             Candidate Pipeline & Screening
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             Suriin ang mga aplikante, mag-imbita para sa panayam, at mag-iwan ng rubric evaluations.
           </p>
         </div>
@@ -99,7 +104,7 @@ export const EmployerDashboard: React.FC = () => {
         <button
           type="button"
           onClick={() => setEmployerTab('post-job')}
-          className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer min-h-[40px]"
+          className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0 min-h-[40px]"
         >
           <PlusCircle className="w-4 h-4" />
           <span>Mag-post ng Bagong Trabaho</span>
@@ -107,15 +112,15 @@ export const EmployerDashboard: React.FC = () => {
       </div>
 
       {/* Filter / Search Bar */}
-      <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs">
         <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search candidate name, skill, location..."
-            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 min-h-[38px]"
+            className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 min-h-[38px]"
           />
         </div>
 
@@ -123,7 +128,7 @@ export const EmployerDashboard: React.FC = () => {
           <select
             value={filterJobId}
             onChange={e => setFilterJobId(e.target.value)}
-            className="w-full sm:w-auto px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:outline-none min-h-[38px]"
+            className="w-full sm:w-auto px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none min-h-[38px]"
           >
             <option value="all">All Jobs ({applicants.length})</option>
             {jobs.map(job => (
@@ -134,7 +139,7 @@ export const EmployerDashboard: React.FC = () => {
           <select
             value={filterStatus}
             onChange={e => setFilterStatus(e.target.value)}
-            className="w-full sm:w-auto px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:outline-none min-h-[38px]"
+            className="w-full sm:w-auto px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none min-h-[38px]"
           >
             <option value="all">All Statuses</option>
             <option value="applied">Applied</option>
@@ -148,103 +153,84 @@ export const EmployerDashboard: React.FC = () => {
 
       {/* Candidate Pipeline Cards / Table */}
       {filteredApplicants.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-8 sm:p-12 text-center space-y-3">
-          <Users className="w-10 h-10 text-slate-300 mx-auto" />
-          <h3 className="text-base font-semibold text-slate-800">Walang tumutugmang aplikante</h3>
-          <p className="text-xs text-slate-500">Subukang baguhin ang mga filter o maghintay ng bagong aplikasyon.</p>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center space-y-3 shadow-2xs">
+          <Users className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
+          <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200">Walang natagpuang aplikante sa filter na ito</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+            Subukang baguhin ang search query o piliin ang "All Jobs" upang makita ang lahat ng aplikante.
+          </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filteredApplicants.map(applicant => (
+        <div className="grid grid-cols-1 gap-4">
+          {filteredApplicants.map(app => (
             <div
-              key={applicant.id}
-              className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-3.5 sm:space-y-4 hover:border-slate-300 transition-all"
+              key={app.id}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4 hover:border-emerald-500/40 transition-all"
             >
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
-                <div className="flex items-start gap-3 sm:gap-4 min-w-0">
-                  {applicant.avatarUrl ? (
-                    <img
-                      src={applicant.avatarUrl}
-                      alt={applicant.fullName}
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
-                      className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl object-cover border border-slate-200 shrink-0 mt-0.5 sm:mt-0"
-                    />
-                  ) : (
-                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-base sm:text-lg shrink-0 mt-0.5 sm:mt-0">
-                      {applicant.fullName.charAt(0)}
-                    </div>
-                  )}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-slate-900 to-emerald-950 text-emerald-300 font-extrabold text-base flex items-center justify-center shrink-0 border border-slate-800 shadow-2xs">
+                    {app.fullName.charAt(0)}
+                  </div>
 
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-base font-bold text-slate-900">{applicant.fullName}</h3>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0">
-                        {applicant.matchScore}% Match
+                      <h3 className="text-base font-extrabold text-slate-900 dark:text-white truncate">
+                        {app.fullName}
+                      </h3>
+                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                        {app.matchScore}% Match
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-600 mt-0.5">{applicant.headline}</p>
-
-                    <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                      <span>Applied for: <strong className="text-slate-800">{applicant.jobTitle}</strong></span>
-                      <span>·</span>
-                      <span>{applicant.location}</span>
-                      <span>·</span>
-                      <span>Expected: <strong className="text-slate-800 font-mono">{applicant.expectedSalary}</strong></span>
-                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
+                      {app.headline} · <span className="font-semibold text-slate-700 dark:text-slate-300">{app.jobTitle}</span>
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                  {getStatusBadge(applicant.status)}
+                <div className="flex items-center gap-2 shrink-0">
+                  {getStatusBadge(app.status)}
 
-                  <div className="flex items-center text-amber-400 pl-1">
-                    {[1, 2, 3, 4, 5].map(s => (
-                      <Star
-                        key={s}
-                        className={`w-3.5 h-3.5 ${s <= (applicant.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Skills Tags */}
-              <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono text-slate-700">
-                {applicant.skills.slice(0, 6).map(skill => (
-                  <span key={skill} className="px-2 py-0.5 bg-slate-100 rounded text-slate-800">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-
-              {/* Footer CTAs */}
-              <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 text-xs">
-                <span className="text-slate-400 truncate text-[11px]">
-                  CV: <strong className="text-slate-600 font-mono">{applicant.resumeFileName}</strong>
-                </span>
-
-                <div className="flex items-center gap-2 w-full sm:w-auto">
                   <button
                     type="button"
-                    onClick={() => setSelectedApplicantId(applicant.id)}
-                    className="flex-1 sm:flex-initial px-3.5 py-2 border border-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px]"
+                    onClick={() => setSelectedApplicantId(app.id)}
+                    className="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-200 dark:border-slate-700"
                   >
-                    <Eye className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>Review Dossier</span>
+                    <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Review Profile</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setSchedulingForApplicant(applicant)}
-                    className="flex-1 sm:flex-initial px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-2xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px]"
+                    onClick={() => setSchedulingForApplicant(app)}
+                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Calendar className="w-3.5 h-3.5 shrink-0" />
+                    <Calendar className="w-3.5 h-3.5" />
                     <span>Schedule Interview</span>
                   </button>
+                </div>
+              </div>
+
+              {/* Details & Skills Line */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>{app.location}</span>
+                  </span>
+                  <span>·</span>
+                  <span>In-apply noong {new Date(app.appliedAt).toLocaleDateString()}</span>
+                  <span>·</span>
+                  <span>Inaasahang Sahod: <strong className="text-slate-800 dark:text-slate-200 font-mono">{app.expectedSalary}</strong></span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1">
+                  {app.skills.slice(0, 3).map((skill, idx) => (
+                    <span key={idx} className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-semibold">
+                      {skill}
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>
