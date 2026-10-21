@@ -22,12 +22,14 @@ import { LiveInterviewRoomModal } from './components/employer/LiveInterviewRoomM
 import { SiteTransparencyModal, TransparencyTab } from './components/common/SiteTransparencyModal';
 import { AuthModal } from './components/common/AuthModal';
 import { LandingPageView } from './components/common/LandingPageView';
+import { Preloader } from './components/common/Preloader';
 import { BackToTop } from './components/common/BackToTop';
 import { JobAlertSignup } from './components/common/JobAlertSignup';
 import { AdminVerificationView } from './components/admin/AdminVerificationView';
 import { CheckCircle2, Info, X, Palmtree, Sparkles, Heart, ShieldCheck, HelpCircle, Lock } from 'lucide-react';
 
 const AppShell: React.FC = () => {
+  const [showPreloader, setShowPreloader] = useState(true);
   const [transparencyTab, setTransparencyTab] = useState<TransparencyTab | null>(null);
   const [adminPasskeyInput, setAdminPasskeyInput] = useState('');
   const [adminPasskeyError, setAdminPasskeyError] = useState<string | null>(null);
@@ -91,6 +93,7 @@ const AppShell: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-emerald-500 selection:text-white transition-colors duration-200">
+      {showPreloader && <Preloader onComplete={() => setShowPreloader(false)} />}
       <Header />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-[104px] sm:pt-[116px] py-4 sm:py-6">

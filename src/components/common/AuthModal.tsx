@@ -191,6 +191,10 @@ export const AuthModal: React.FC = () => {
           }
         );
 
+        try {
+          localStorage.removeItem('hanap_palawan_pending_auth_role');
+        } catch {}
+
         setUserProfile(profile);
         setRole(selectedRole);
         if (selectedRole === 'seeker') {
@@ -227,6 +231,10 @@ export const AuthModal: React.FC = () => {
           phone: phone.trim()
         });
         if (profile) {
+          try {
+            localStorage.removeItem('hanap_palawan_pending_auth_role');
+          } catch {}
+
           const finalProfile = { ...profile, role: selectedRole };
           setUserProfile(finalProfile);
           setRole(selectedRole);
@@ -270,6 +278,10 @@ export const AuthModal: React.FC = () => {
     setLoading(true);
     try {
       const profile = await signInWithGoogle(selectedRole);
+      try {
+        localStorage.removeItem('hanap_palawan_pending_auth_role');
+      } catch {}
+
       const finalProfile = { ...profile, role: selectedRole };
       setUserProfile(finalProfile);
       setRole(selectedRole);

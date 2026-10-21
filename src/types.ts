@@ -202,6 +202,8 @@ export interface UserProfile {
   verificationStatus?: 'unverified' | 'pending' | 'verified' | 'rejected';
   verificationSubmittedAt?: string;
   verificationRejectionReason?: string;
+  wasPreviouslyRejected?: boolean;
+  previousRejectionReason?: string;
   isVerified?: boolean;
 }
 

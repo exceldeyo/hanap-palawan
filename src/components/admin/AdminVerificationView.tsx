@@ -627,6 +627,12 @@ export const AdminVerificationView: React.FC = () => {
                           {status === 'rejected' && <XCircle className="w-3 h-3" />}
                           <span>{status === 'pending' ? 'Pending (1–2 Days SLA)' : status}</span>
                         </span>
+                        {(emp.wasPreviouslyRejected || emp.previousRejectionReason) && status === 'pending' && (
+                          <span className="px-2.5 py-0.5 rounded-md text-[11px] font-black bg-rose-500 text-white shadow-2xs flex items-center gap-1 animate-pulse">
+                            <AlertTriangle className="w-3 h-3" />
+                            <span>Re-submitted (Previously Rejected)</span>
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
@@ -660,6 +666,24 @@ export const AdminVerificationView: React.FC = () => {
                           {hasBothPhotos ? '2/2 Certificate Photos Attached' : 'Missing Document Photo'}
                         </span>
                       </div>
+
+                      {/* Re-submitted after Rejection Alert Banner */}
+                      {(emp.wasPreviouslyRejected || emp.previousRejectionReason) && status === 'pending' && (
+                        <div className="mt-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 text-xs space-y-1 animate-in fade-in">
+                          <div className="flex items-center gap-1.5 font-extrabold text-amber-900 dark:text-amber-200">
+                            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                            <span>⚠️ MULING ISINANGGUNI (DATING REJECTED USER)</span>
+                          </div>
+                          <p className="text-[11px] leading-relaxed text-amber-900/90 dark:text-amber-200/90">
+                            Muling nagsumite / nag-update ng profile at requirements ang employer na ito matapos ma-reject ng Admin. Paki-double check ang mga bagong BIR Form 2303 / DTI details bago mag-approve.
+                          </p>
+                          {emp.previousRejectionReason && (
+                            <div className="pt-1.5 border-t border-amber-200 dark:border-amber-800 text-[11px] font-mono text-amber-900 dark:text-amber-200">
+                              <strong>Dating Dahilan ng Rejection:</strong> "{emp.previousRejectionReason}"
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Action Buttons */}

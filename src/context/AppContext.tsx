@@ -599,16 +599,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrentUser(user);
       if (user && !user.isAnonymous) {
         try {
-          const pendingRole = localStorage.getItem('hanap_palawan_pending_auth_role') as UserRole | null;
           const savedRole = localStorage.getItem(STORAGE_KEYS.ROLE) as UserRole | null;
+          const pendingRole = localStorage.getItem('hanap_palawan_pending_auth_role') as UserRole | null;
           let profile = await getUserProfileFromFirestore(user.uid);
           if (profile) {
-            const effectiveRole: UserRole = (pendingRole === 'seeker' || pendingRole === 'employer')
-              ? pendingRole
-              : (savedRole === 'employer' || savedRole === 'seeker'
-                ? savedRole
+            // Prioritize explicitly saved active role in localStorage so employer session remains employer across app restarts
+            const effectiveRole: UserRole = (savedRole === 'employer' || savedRole === 'seeker' || savedRole === 'admin')
+              ? savedRole
+              : (pendingRole === 'seeker' || pendingRole === 'employer'
+                ? pendingRole
                 : (profile.role || 'seeker'));
-            if (profile.role !== effectiveRole) {
+
+            if (profile.role !== effectiveRole && effectiveRole !== 'admin') {
               profile = { ...profile, role: effectiveRole };
               await saveUserProfileToFirestore(profile);
             }
@@ -903,6 +905,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setUserProfile(updated);
       saveUserProfileToFirestore(updated).catch(() => {});
     }
+    // Clear temporary pending auth role so it doesn't revert session on reloads
+    try {
+      localStorage.removeItem('hanap_palawan_pending_auth_role');
+    } catch {}
+
     if (role === 'employer') {
       setEmployerTab('pipeline');
       showNotification('Tagumpay! Naka-switch ka na sa Employer Portal. Maaari ka nang mag-post ng trabaho at i-setup ang iyong company profile.', 'success');
@@ -961,9 +968,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: new Date().toLocaleDateString()
     };
 
-    const nextStatus = (base.verificationStatus === 'verified' && base.birNumber === mergedBir && base.dtiNumber === mergedDti)
-      ? 'verified'
-      : (hasAnySubmission ? 'pending' : (base.verificationStatus || 'pending'));
+    // Check if user was previously rejected or is currently rejected
+    const isCurrentlyRejected = base.verificationStatus === 'rejected';
+    const isReSubmitAfterRejection = isCurrentlyRejected || Boolean(base.wasPreviouslyRejected);
+    const previousReason = isCurrentlyRejected
+      ? (base.verificationRejectionReason || base.previousRejectionReason || 'Dating tinanggihan ng Admin.')
+      : base.previousRejectionReason;
+
+    const nextStatus: 'pending' | 'verified' | 'unverified' | 'rejected' =
+      (base.verificationStatus === 'verified' && base.birNumber === mergedBir && base.dtiNumber === mergedDti)
+        ? 'verified'
+        : (hasAnySubmission ? 'pending' : (base.verificationStatus || 'pending'));
 
     const updated: UserProfile = {
       ...base,
@@ -974,7 +989,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       dtiDocumentUrl: mergedDtiDoc,
       role: 'employer',
       verificationStatus: nextStatus,
-      verificationSubmittedAt: hasAnySubmission ? (base.verificationSubmittedAt || submittedTimestamp) : base.verificationSubmittedAt,
+      verificationSubmittedAt: (hasAnySubmission || isReSubmitAfterRejection)
+        ? submittedTimestamp
+        : (base.verificationSubmittedAt || submittedTimestamp),
+      wasPreviouslyRejected: isReSubmitAfterRejection ? true : base.wasPreviouslyRejected,
+      previousRejectionReason: isReSubmitAfterRejection ? previousReason : base.previousRejectionReason,
       verificationRejectionReason: nextStatus === 'pending' ? undefined : base.verificationRejectionReason,
       isVerified: nextStatus === 'verified'
     };
@@ -994,7 +1013,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return nextList;
     });
 
-    if (hasAnySubmission && nextStatus === 'pending') {
+    if (isReSubmitAfterRejection) {
+      showNotification('Muling naisumite ang inyong profile para sa verification! Makikita ito sa Admin Portal sa ilalim ng "Re-submitted after Rejection" para masuri muli.', 'success');
+    } else if (hasAnySubmission && nextStatus === 'pending') {
       showNotification('Matagumpay na naisumite ang inyong BIR at DTI requirements! Mangyaring maghintay ng 1–2 business days para sa pagsusuri at pag-apruba ng Admin.', 'success');
     } else {
       showNotification('Tagumpay na nai-update ang Company Profile!', 'success');
@@ -1013,7 +1034,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               ...emp,
               verificationStatus: status,
               isVerified: status === 'verified',
-              verificationRejectionReason: status === 'rejected' ? (rejectionReason || 'Hindi tugma o malabo ang isinumiteng BIR / DTI document photo.') : undefined
+              verificationRejectionReason: status === 'rejected' ? (rejectionReason || 'Hindi tugma o malabo ang isinumiteng BIR / DTI document photo.') : undefined,
+              wasPreviouslyRejected: status === 'rejected' ? true : emp.wasPreviouslyRejected,
+              previousRejectionReason: status === 'rejected' ? (rejectionReason || emp.previousRejectionReason) : emp.previousRejectionReason
             };
             saveUserProfileToFirestore(updatedEmp).catch(() => {});
             return updatedEmp;
@@ -1032,7 +1055,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ...prev,
           verificationStatus: status,
           isVerified: status === 'verified',
-          verificationRejectionReason: status === 'rejected' ? (rejectionReason || 'Hindi tugma o malabo ang isinumiteng BIR / DTI document photo.') : undefined
+          verificationRejectionReason: status === 'rejected' ? (rejectionReason || 'Hindi tugma o malabo ang isinumiteng BIR / DTI document photo.') : undefined,
+          wasPreviouslyRejected: status === 'rejected' ? true : prev.wasPreviouslyRejected,
+          previousRejectionReason: status === 'rejected' ? (rejectionReason || prev.previousRejectionReason) : prev.previousRejectionReason
         };
       }
       return prev;
