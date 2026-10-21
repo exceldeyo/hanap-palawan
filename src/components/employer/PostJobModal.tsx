@@ -93,7 +93,11 @@ export const PostJobModal: React.FC = () => {
       return;
     }
     if (userProfile.verificationStatus !== 'verified' && !userProfile.isVerified) {
-      showNotification('⏳ Kasalukuyan pang nasa Pending Admin Review ang inyong BIR at DTI documents. Makakapag-post kayo sa oras na ma-verify ito ng Admin.', 'info');
+      if (userProfile.verificationStatus === 'rejected') {
+        showNotification('❌ Na-reject ng Admin ang inyong BIR/DTI requirements. Pakisuri ang dahilan at mag-resubmit ng tamang BIR at DTI documents sa Company Profile.', 'info');
+      } else {
+        showNotification('⏳ Kasalukuyan pang nasa Pending Admin Review ang inyong BIR at DTI documents. Makakapag-post kayo sa oras na ma-verify ito ng Admin.', 'info');
+      }
       setEmployerTab('profile');
       return;
     }

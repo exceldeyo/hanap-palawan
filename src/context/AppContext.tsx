@@ -600,11 +600,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (user && !user.isAnonymous) {
         try {
           const pendingRole = localStorage.getItem('hanap_palawan_pending_auth_role') as UserRole | null;
+          const savedRole = localStorage.getItem(STORAGE_KEYS.ROLE) as UserRole | null;
           let profile = await getUserProfileFromFirestore(user.uid);
           if (profile) {
             const effectiveRole: UserRole = (pendingRole === 'seeker' || pendingRole === 'employer')
               ? pendingRole
-              : (profile.role || 'seeker');
+              : (savedRole === 'employer' || savedRole === 'seeker'
+                ? savedRole
+                : (profile.role || 'seeker'));
             if (profile.role !== effectiveRole) {
               profile = { ...profile, role: effectiveRole };
               await saveUserProfileToFirestore(profile);

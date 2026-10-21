@@ -448,6 +448,9 @@ export const EmployerProfileView: React.FC = () => {
             <div className="space-y-1">
               <p className="font-bold">Dahilan ng Pagka-reject mula sa Admin:</p>
               <p>{userProfile?.verificationRejectionReason || 'Hindi tugma ang numero o malabo ang in-upload na larawan ng BIR/DTI certificate. Pakisigurong opisyal na dokumento ang naka-upload.'}</p>
+              <p className="font-semibold text-rose-700 dark:text-rose-300 pt-1 border-t border-rose-200/60 dark:border-rose-900/60 mt-1">
+                📌 Maaari kayong mag-update ng inyong BIR TIN / DTI Number at mag-upload ng bagong malinaw na larawan sa ibaba, at i-click ang <strong>"I-resubmit ang BIR at DTI Requirements"</strong> upang muling masuri ng Admin.
+              </p>
             </div>
           </div>
         )}
@@ -670,7 +673,13 @@ export const EmployerProfileView: React.FC = () => {
               className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
             >
               <Upload className="w-4 h-4" />
-              <span>{verificationStatus === 'pending' ? 'I-update ang Isinumiteng Requirements' : 'I-submit ang BIR at DTI Requirements'}</span>
+              <span>
+                {verificationStatus === 'pending'
+                  ? 'I-update ang Isinumiteng Requirements'
+                  : verificationStatus === 'rejected'
+                  ? 'I-resubmit ang BIR at DTI Requirements'
+                  : 'I-submit ang BIR at DTI Requirements'}
+              </span>
             </button>
           </div>
         </form>
